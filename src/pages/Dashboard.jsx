@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import { Filter } from 'lucide-react';
-import ConnectionStatus from '../components/ConnectionStatus';
+import ConnectionStatus from '../components/ConnectionStatus.jsx';
 import { searchItems } from '../api/postgrest';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#6366f1'];

@@ -7,7 +7,7 @@ import { CheckCircle2, XCircle } from 'lucide-react';
  * and displays a green check when the request succeeds, otherwise a red X.
  */
 export default function ConnectionStatus() {
-  const [online, setOnline] = useState<boolean | null>(null);
+  const [online, setOnline] = useState(null);
 
   useEffect(() => {
     const url = import.meta.env.VITE_API_URL ?? '/';
