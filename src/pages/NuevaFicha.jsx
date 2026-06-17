@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Save } from 'lucide-react';
+import { createInforme } from '../api/postgrest';
 
 export default function NuevaFicha() {
   const [formData, setFormData] = useState({
@@ -7,8 +8,14 @@ export default function NuevaFicha() {
     solicitante_nombre: '',
     municipio: '',
     provincia: '',
+    direccion: '',
+    paraje: '',
     uso_predominante: '',
+    clase_general: '',
     estado_actual: '',
+    finalidad: '',
+    sociedad_nombre: '',
+    fecha_emision: '',
     latitud: '',
     longitud: '',
     valor_mercado_adoptado: ''
@@ -24,28 +31,23 @@ export default function NuevaFicha() {
     setStatus('saving');
 
     try {
-      const BASE_URL = import.meta.env.VITE_API_URL || 'https://n8n-postgrest-api.n9xpuu.easypanel.host';
-      
       // Formatear números
       const payload = {
         ...formData,
-        latitud: parseFloat(formData.latitud),
-        longitud: parseFloat(formData.longitud),
-        valor_mercado_adoptado: parseFloat(formData.valor_mercado_adoptado)
+        latitud: formData.latitud ? parseFloat(formData.latitud) : null,
+        longitud: formData.longitud ? parseFloat(formData.longitud) : null,
+        valor_mercado_adoptado: formData.valor_mercado_adoptado ? parseFloat(formData.valor_mercado_adoptado) : null,
+        fecha_emision: formData.fecha_emision || null
       };
 
-      const res = await fetch(`${BASE_URL}/informes_tasacion`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (!res.ok) throw new Error('Error al guardar');
+      await createInforme(payload);
       
       setStatus('success');
       setFormData({
         numero_informe: '', solicitante_nombre: '', municipio: '', provincia: '',
-        uso_predominante: '', estado_actual: '', latitud: '', longitud: '', valor_mercado_adoptado: ''
+        direccion: '', paraje: '', uso_predominante: '', clase_general: '',
+        estado_actual: '', finalidad: '', sociedad_nombre: '', fecha_emision: '',
+        latitud: '', longitud: '', valor_mercado_adoptado: ''
       });
       setTimeout(() => setStatus('idle'), 3000);
     } catch (err) {
@@ -73,6 +75,18 @@ export default function NuevaFicha() {
               <label>Solicitante</label>
               <input required name="solicitante_nombre" value={formData.solicitante_nombre} onChange={handleChange} />
             </div>
+            <div className="form-group">
+              <label>Sociedad Tasadora</label>
+              <input name="sociedad_nombre" value={formData.sociedad_nombre} onChange={handleChange} placeholder="Ej: Valoraciones Mediterráneo, S.A." />
+            </div>
+            <div className="form-group">
+              <label>Finalidad</label>
+              <input name="finalidad" value={formData.finalidad} onChange={handleChange} placeholder="Ej: Asesoramiento - Valor de mercado" />
+            </div>
+            <div className="form-group">
+              <label>Fecha de Emisión</label>
+              <input type="date" name="fecha_emision" value={formData.fecha_emision} onChange={handleChange} />
+            </div>
           </div>
         </div>
 
@@ -88,6 +102,14 @@ export default function NuevaFicha() {
               <input required name="municipio" value={formData.municipio} onChange={handleChange} />
             </div>
             <div className="form-group">
+              <label>Dirección</label>
+              <input name="direccion" value={formData.direccion} onChange={handleChange} />
+            </div>
+            <div className="form-group">
+              <label>Paraje</label>
+              <input name="paraje" value={formData.paraje} onChange={handleChange} />
+            </div>
+            <div className="form-group">
               <label>Latitud</label>
               <input type="number" step="any" required name="latitud" value={formData.latitud} onChange={handleChange} />
             </div>
@@ -101,6 +123,10 @@ export default function NuevaFicha() {
         <div className="form-section">
           <h3>Detalles de Tasación</h3>
           <div className="form-grid">
+            <div className="form-group">
+              <label>Clase General</label>
+              <input name="clase_general" value={formData.clase_general} onChange={handleChange} placeholder="Ej: Finca Rústica" />
+            </div>
             <div className="form-group">
               <label>Uso Predominante</label>
               <input required name="uso_predominante" value={formData.uso_predominante} onChange={handleChange} />

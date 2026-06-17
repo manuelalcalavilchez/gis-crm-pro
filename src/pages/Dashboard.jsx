@@ -40,9 +40,15 @@ export default function Dashboard() {
    const opcionesProvincias = useMemo(() => [...new Set(data.map(d => d.provincia).filter(Boolean))], [data]);
    const opcionesUsos = useMemo(() => [...new Set(data.map(d => d.uso_predominante).filter(Boolean))], [data]);
    const opcionesEstados = useMemo(() => [...new Set(data.map(d => d.estado_actual).filter(Boolean))], [data]);
-   const opcionesCultivos = useMemo(() => [...new Set(data.map(d => d.tipo_cultivo).filter(Boolean))], [data]);
-   const opcionesAnios = useMemo(() => [...new Set(data.map(d => d.anio).filter(Boolean))], [data]);
-   const opcionesTasadores = useMemo(() => [...new Set(data.map(d => d.tasador).filter(Boolean))], [data]);
+   const opcionesCultivos = useMemo(() => [...new Set(data.map(d => d.clase_general).filter(Boolean))], [data]);
+   const opcionesAnios = useMemo(() => {
+     const years = data.map(d => {
+       const f = d.fecha_emision || d.fecha_creacion_registro;
+       return f ? String(new Date(f).getFullYear()) : null;
+     }).filter(Boolean);
+     return [...new Set(years)].sort();
+   }, [data]);
+   const opcionesTasadores = useMemo(() => [...new Set(data.map(d => d.sociedad_nombre).filter(Boolean))], [data]);
    const opcionesMunicipios = useMemo(() => [...new Set(data.map(d => d.municipio).filter(Boolean))], [data]);
 
 
@@ -52,14 +58,18 @@ export default function Dashboard() {
        if (filtroProvincia && item.provincia !== filtroProvincia) return false;
        if (filtroUso && item.uso_predominante !== filtroUso) return false;
        if (filtroEstado && item.estado_actual !== filtroEstado) return false;
-       if (filtroCultivo && item.tipo_cultivo !== filtroCultivo) return false;
-       if (filtroAnio && String(item.anio) !== filtroAnio) return false;
-       if (filtroTasador && item.tasador !== filtroTasador) return false;
+       if (filtroCultivo && item.clase_general !== filtroCultivo) return false;
+       if (filtroAnio) {
+         const f = item.fecha_emision || item.fecha_creacion_registro;
+         const itemAnio = f ? String(new Date(f).getFullYear()) : '';
+         if (itemAnio !== filtroAnio) return false;
+       }
+       if (filtroTasador && item.sociedad_nombre !== filtroTasador) return false;
        // Filtro por distancia
        if (baseMunicipio && radioKm) {
          const base = data.find(d => d.municipio === baseMunicipio);
-         if (base && base.lat && base.lng) {
-           const distance = getDistanceFromLatLonInKm(base.lat, base.lng, item.lat, item.lng);
+         if (base && base.latitud && base.longitud) {
+           const distance = getDistanceFromLatLonInKm(base.latitud, base.longitud, item.latitud, item.longitud);
            if (distance > Number(radioKm)) return false;
          }
        }
@@ -100,13 +110,13 @@ export default function Dashboard() {
   const dataUsos = Object.keys(usosCount).map(key => ({ name: key, value: usosCount[key] }));
 
   // Preparar datos para gráficos superiores
-  const cultivosCount = datosFiltrados.reduce((acc, curr) => { const k = curr.tipo_cultivo || 'Desconocido'; acc[k] = (acc[k] || 0) + 1; return acc; }, {});
+  const cultivosCount = datosFiltrados.reduce((acc, curr) => { const k = curr.clase_general || 'Desconocido'; acc[k] = (acc[k] || 0) + 1; return acc; }, {});
   const dataCultivos = Object.keys(cultivosCount).map(k => ({ name: k, value: cultivosCount[k] }));
 
-  const aniosCount = datosFiltrados.reduce((acc, curr) => { const k = curr.anio || 'Desconocido'; acc[k] = (acc[k] || 0) + 1; return acc; }, {});
+  const aniosCount = datosFiltrados.reduce((acc, curr) => { const f = curr.fecha_emision || curr.fecha_creacion_registro; const k = f ? new Date(f).getFullYear() : 'Desconocido'; acc[k] = (acc[k] || 0) + 1; return acc; }, {});
   const dataAnios = Object.keys(aniosCount).map(k => ({ name: k, value: aniosCount[k] }));
 
-  const tasadoresCount = datosFiltrados.reduce((acc, curr) => { const k = curr.tasador || 'Desconocido'; acc[k] = (acc[k] || 0) + 1; return acc; }, {});
+  const tasadoresCount = datosFiltrados.reduce((acc, curr) => { const k = curr.sociedad_nombre || 'Desconocido'; acc[k] = (acc[k] || 0) + 1; return acc; }, {});
   const dataTasadores = Object.keys(tasadoresCount).map(k => ({ name: k, value: tasadoresCount[k] }));
 
   const provinciasCount = datosFiltrados.reduce((acc, curr) => { const k = curr.provincia || 'Desconocido'; acc[k] = (acc[k] || 0) + 1; return acc; }, {});
@@ -163,9 +173,9 @@ export default function Dashboard() {
           </div>
           {/* Nuevos filtros */}
           <div className="form-group">
-            <label>Tipo de Cultivo</label>
+            <label>Clase General</label>
             <select value={filtroCultivo} onChange={e => setFiltroCultivo(e.target.value)}>
-              <option value="">Todos los cultivos</option>
+              <option value="">Todas las clases</option>
               {opcionesCultivos.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
@@ -177,9 +187,9 @@ export default function Dashboard() {
             </select>
           </div>
           <div className="form-group">
-            <label>Tasador</label>
+            <label>Sociedad Tasadora</label>
             <select value={filtroTasador} onChange={e => setFiltroTasador(e.target.value)}>
-              <option value="">Todos los tasadores</option>
+              <option value="">Todas las sociedades</option>
               {opcionesTasadores.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>

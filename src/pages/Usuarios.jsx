@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Users, UserPlus, Trash2, KeyRound } from 'lucide-react';
 import { useStore } from '../store/useStore';
+import { fetchUsuarios as apiFetchUsuarios, createUsuario, deleteUsuario } from '../api/postgrest';
 
 export default function Usuarios() {
   const [usuarios, setUsuarios] = useState([]);
@@ -14,13 +15,9 @@ export default function Usuarios() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '', role: 'viewer' });
 
-  const BASE_URL = import.meta.env.VITE_API_URL || 'https://n8n-postgrest-api.n9xpuu.easypanel.host';
-
-  const fetchUsuarios = async () => {
+  const loadUsuarios = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/usuarios`);
-      if (!res.ok) throw new Error('Error al cargar usuarios');
-      const data = await res.json();
+      const data = await apiFetchUsuarios();
       setUsuarios(data);
     } catch (err) {
       console.error(err);
@@ -31,7 +28,7 @@ export default function Usuarios() {
   };
 
   useEffect(() => {
-    fetchUsuarios();
+    loadUsuarios();
   }, []);
 
   const handleCreateUser = async (e) => {
@@ -40,18 +37,12 @@ export default function Usuarios() {
     setError('');
     
     try {
-      const res = await fetch(`${BASE_URL}/usuarios`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      
-      if (!res.ok) throw new Error('Error al crear usuario (quizá el correo ya existe)');
+      await createUsuario(formData);
       
       setMensaje('Usuario creado correctamente');
       setIsFormOpen(false);
       setFormData({ email: '', password: '', role: 'viewer' });
-      fetchUsuarios();
+      loadUsuarios();
     } catch (err) {
       setError(err.message);
     }
@@ -66,13 +57,10 @@ export default function Usuarios() {
     if (!confirm(`¿Estás seguro de eliminar a ${email}?`)) return;
 
     try {
-      const res = await fetch(`${BASE_URL}/usuarios?email=eq.${encodeURIComponent(email)}`, {
-        method: 'DELETE'
-      });
-      if (!res.ok) throw new Error('Error al eliminar');
+      await deleteUsuario(email);
       
       setMensaje('Usuario eliminado');
-      fetchUsuarios();
+      loadUsuarios();
     } catch (err) {
       setError(err.message);
     }

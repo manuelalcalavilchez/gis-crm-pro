@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { Shield } from 'lucide-react';
+import { loginUser } from '../api/postgrest';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -17,11 +18,7 @@ export default function Login() {
     setError('');
 
     try {
-      const BASE_URL = import.meta.env.VITE_API_URL || 'https://n8n-postgrest-api.n9xpuu.easypanel.host';
-      // Petición al endpoint de usuarios
-      const res = await fetch(`${BASE_URL}/usuarios?email=eq.${encodeURIComponent(email)}&password=eq.${encodeURIComponent(password)}`);
-      const data = await res.json();
-
+      const data = await loginUser(email, password);
       if (data && data.length > 0) {
         login(data[0]);
         navigate('/');
