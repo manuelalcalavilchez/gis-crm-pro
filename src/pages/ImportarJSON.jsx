@@ -1,6 +1,101 @@
 import { useState } from 'react';
 import { UploadCloud, CheckCircle, AlertTriangle, ArrowRight, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { importInformes } from '../api/postgrest';
+
+// ------------------------------------------------------------------
+// Aliases permitidos por campo destino (orden = prioridad de lectura)
+// ------------------------------------------------------------------
+const ALIAS_MAP = {
+  numero_informe: ['numero_informe', 'numero', 'id'],
+  solicitante_nombre: ['solicitante_nombre', 'nombre', 'titulo'],
+  direccion: ['direccion', 'domicilio'],
+  municipio: ['municipio', 'municipio_ubicacion'],
+  provincia: ['provincia', 'provincia_ubicacion'],
+  estado_actual: ['estado_actual', 'estado'],
+  valor_mercado_adoptado: ['valor_mercado_adoptado', 'valor_tasado', 'valor'],
+  superficie: ['superficie', 'superficie_total', 'superficie_m2', 'm2'],
+  uso_predominante: ['uso_predominante', 'uso'],
+  tipo_cultivo: ['tipo_cultivo', 'cultivo'],
+  anio: ['anio', 'year', 'fecha_anio'],
+  tasador: ['tasador', 'tasador_nombre'],
+};
+
+// Campos de texto opcionales (numero_informe y solicitante_nombre se tratan aparte)
+const TEXT_FIELDS = [
+  'direccion',
+  'municipio',
+  'provincia',
+  'estado_actual',
+  'uso_predominante',
+  'tipo_cultivo',
+  'tasador',
+];
+
+// Campos numéricos opcionales (no incluye latitud/longitud, que tienen regla propia)
+const NUMBER_FIELDS = ['valor_mercado_adoptado', 'superficie', 'anio'];
+
+// Devuelve el primer valor presente (no undefined/null) entre las claves alias dadas
+const firstDefined = (item, keys) => {
+  for (const key of keys) {
+    if (item[key] !== undefined && item[key] !== null) return item[key];
+  }
+  return undefined;
+};
+
+// Normaliza un string: trim, y si queda vacío devuelve undefined (campo no incluido)
+const cleanText = (val) => {
+  if (val === undefined || val === null) return undefined;
+  const str = String(val).trim();
+  return str.length > 0 ? str : undefined;
+};
+
+// Normaliza un número: limpia caracteres no numéricos, si no es válido devuelve undefined
+const cleanNumber = (val) => {
+  if (val === undefined || val === null) return undefined;
+  const cleaned = String(val).replace(/[^0-9.-]+/g, '');
+  if (cleaned === '' || cleaned === '-' || cleaned === '.') return undefined;
+  const num = Number(cleaned);
+  return Number.isFinite(num) ? num : undefined;
+};
+
+// Coordenadas: si no vienen o son 0, se guarda null (nunca 0) para no romper el mapa
+const cleanCoordinate = (val) => {
+  const num = cleanNumber(val);
+  if (num === undefined || num === 0) return null;
+  return num;
+};
+
+// Mapea un registro crudo del JSON al payload válido de informes_tasacion.
+// Devuelve null si el registro no tiene numero_informe (campo obligatorio
+// que no se puede inventar).
+const mapearRegistro = (item) => {
+  const numeroInforme = cleanText(firstDefined(item, ALIAS_MAP.numero_informe));
+  if (!numeroInforme) return null;
+
+  const payload = {
+    numero_informe: numeroInforme,
+    // Único campo con default permitido por las reglas de negocio
+    solicitante_nombre:
+      cleanText(firstDefined(item, ALIAS_MAP.solicitante_nombre)) || 'Importación Masiva',
+  };
+
+  TEXT_FIELDS.forEach((field) => {
+    const value = cleanText(firstDefined(item, ALIAS_MAP[field]));
+    if (value !== undefined) payload[field] = value;
+  });
+
+  NUMBER_FIELDS.forEach((field) => {
+    const value = cleanNumber(firstDefined(item, ALIAS_MAP[field]));
+    if (value !== undefined) payload[field] = value;
+  });
+
+  // lat/latitud -> latitud | lng/lon/longitud -> longitud
+  payload.latitud = cleanCoordinate(item.lat ?? item.latitud);
+  payload.longitud = cleanCoordinate(item.lng ?? item.lon ?? item.longitud);
+
+  return payload;
+};
 
 export default function ImportarJSON() {
   const [files, setFiles] = useState([]); // multiple selected files
@@ -39,36 +134,11 @@ export default function ImportarJSON() {
     setStatus('uploading');
 
     try {
-      // Mapeador Inteligente Simulado: adaptamos los campos de 'datosFalsos' a los campos de nuestra BBDD
-      const mappedData = rawData.map(item => ({
-        numero_informe: String(item.id || item.numero_informe || Math.floor(Math.random()*100000)),
-        solicitante_nombre: item.solicitante_nombre || 'Importación Masiva',
-        municipio: item.municipio || (item.direccion && item.direccion.split(',').pop().trim()) || 'Desconocido',
-        provincia: item.provincia || 'Desconocida',
-        direccion: item.direccion || '',
-        uso_predominante: item.uso_predominante || 'Residencial',
-        estado_actual: item.estado || item.estado_actual || 'Pendiente',
-        latitud: Number(item.lat || item.latitud || 0),
-        longitud: Number(item.lng || item.longitud || 0),
-        valor_mercado_adoptado: Number(
-          String(item.valor_tasado || item.valor_mercado_adoptado || 0)
-            .replace(/[^0-9.-]+/g,"")
-        )
-      }));
+      // Mapeador estricto: solo incluye lo que realmente viene en el JSON,
+      // sin inventar defaults (salvo solicitante_nombre).
+      const mappedData = rawData.map(mapearRegistro).filter(Boolean);
 
-      const BASE_URL = import.meta.env.VITE_API_URL || 'https://n8n-postgrest-api.n9xpuu.easypanel.host';
-      const res = await fetch(`${BASE_URL}/informes_tasacion`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
-        },
-        body: JSON.stringify(mappedData)
-      });
-
-      if (!res.ok) {
-        throw new Error(`Error en el servidor: ${res.statusText}`);
-      }
+      await importInformes(mappedData);
 
       setStatus('success');
       setMessage(`Se han importado ${mappedData.length} registros correctamente.`);
