@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import { Filter } from 'lucide-react';
+import ConnectionStatus from '../components/ConnectionStatus';
 import { searchItems } from '../api/postgrest';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#6366f1'];
@@ -13,6 +14,13 @@ export default function Dashboard() {
   const [filtroProvincia, setFiltroProvincia] = useState('');
   const [filtroUso, setFiltroUso] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('');
+  // Nuevos filtros
+  const [filtroCultivo, setFiltroCultivo] = useState('');
+  const [filtroAnio, setFiltroAnio] = useState('');
+  const [filtroTasador, setFiltroTasador] = useState('');
+  const [baseMunicipio, setBaseMunicipio] = useState('');
+  const [radioKm, setRadioKm] = useState('');
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -29,19 +37,36 @@ export default function Dashboard() {
   }, []);
 
   // Extraer opciones únicas para los selects de filtro
-  const opcionesProvincias = useMemo(() => [...new Set(data.map(d => d.provincia).filter(Boolean))], [data]);
-  const opcionesUsos = useMemo(() => [...new Set(data.map(d => d.uso_predominante).filter(Boolean))], [data]);
-  const opcionesEstados = useMemo(() => [...new Set(data.map(d => d.estado_actual).filter(Boolean))], [data]);
+   const opcionesProvincias = useMemo(() => [...new Set(data.map(d => d.provincia).filter(Boolean))], [data]);
+   const opcionesUsos = useMemo(() => [...new Set(data.map(d => d.uso_predominante).filter(Boolean))], [data]);
+   const opcionesEstados = useMemo(() => [...new Set(data.map(d => d.estado_actual).filter(Boolean))], [data]);
+   const opcionesCultivos = useMemo(() => [...new Set(data.map(d => d.tipo_cultivo).filter(Boolean))], [data]);
+   const opcionesAnios = useMemo(() => [...new Set(data.map(d => d.anio).filter(Boolean))], [data]);
+   const opcionesTasadores = useMemo(() => [...new Set(data.map(d => d.tasador).filter(Boolean))], [data]);
+   const opcionesMunicipios = useMemo(() => [...new Set(data.map(d => d.municipio).filter(Boolean))], [data]);
+
 
   // Aplicar filtros a los datos
   const datosFiltrados = useMemo(() => {
-    return data.filter(item => {
-      if (filtroProvincia && item.provincia !== filtroProvincia) return false;
-      if (filtroUso && item.uso_predominante !== filtroUso) return false;
-      if (filtroEstado && item.estado_actual !== filtroEstado) return false;
-      return true;
-    });
-  }, [data, filtroProvincia, filtroUso, filtroEstado]);
+     return data.filter(item => {
+       if (filtroProvincia && item.provincia !== filtroProvincia) return false;
+       if (filtroUso && item.uso_predominante !== filtroUso) return false;
+       if (filtroEstado && item.estado_actual !== filtroEstado) return false;
+       if (filtroCultivo && item.tipo_cultivo !== filtroCultivo) return false;
+       if (filtroAnio && String(item.anio) !== filtroAnio) return false;
+       if (filtroTasador && item.tasador !== filtroTasador) return false;
+       // Filtro por distancia
+       if (baseMunicipio && radioKm) {
+         const base = data.find(d => d.municipio === baseMunicipio);
+         if (base && base.lat && base.lng) {
+           const distance = getDistanceFromLatLonInKm(base.lat, base.lng, item.lat, item.lng);
+           if (distance > Number(radioKm)) return false;
+         }
+       }
+       return true;
+     });
+
+  }, [data, filtroProvincia, filtroUso, filtroEstado, filtroCultivo, filtroAnio, filtroTasador, baseMunicipio, radioKm]);
 
   if (loading) {
     return <div className="loading-state">Cargando métricas...</div>;
@@ -51,6 +76,21 @@ export default function Dashboard() {
   const totalValor = datosFiltrados.reduce((acc, curr) => acc + (Number(curr.valor_mercado_adoptado) || 0), 0);
   const avgValor = totalTasaciones ? (totalValor / totalTasaciones) : 0;
 
+   // Función de distancia (haversine)
+   function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+     const R = 6371; // Radio de la Tierra en km
+     const dLat = deg2rad(lat2 - lat1);
+     const dLon = deg2rad(lon2 - lon1);
+     const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+               Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+               Math.sin(dLon/2) * Math.sin(dLon/2);
+     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+     return R * c;
+   }
+   function deg2rad(deg) {
+     return deg * (Math.PI/180);
+   }
+
   // Preparar datos para gráfico de usos
   const usosCount = datosFiltrados.reduce((acc, curr) => {
     const uso = curr.uso_predominante || 'Desconocido';
@@ -58,6 +98,19 @@ export default function Dashboard() {
     return acc;
   }, {});
   const dataUsos = Object.keys(usosCount).map(key => ({ name: key, value: usosCount[key] }));
+
+  // Preparar datos para gráficos superiores
+  const cultivosCount = datosFiltrados.reduce((acc, curr) => { const k = curr.tipo_cultivo || 'Desconocido'; acc[k] = (acc[k] || 0) + 1; return acc; }, {});
+  const dataCultivos = Object.keys(cultivosCount).map(k => ({ name: k, value: cultivosCount[k] }));
+
+  const aniosCount = datosFiltrados.reduce((acc, curr) => { const k = curr.anio || 'Desconocido'; acc[k] = (acc[k] || 0) + 1; return acc; }, {});
+  const dataAnios = Object.keys(aniosCount).map(k => ({ name: k, value: aniosCount[k] }));
+
+  const tasadoresCount = datosFiltrados.reduce((acc, curr) => { const k = curr.tasador || 'Desconocido'; acc[k] = (acc[k] || 0) + 1; return acc; }, {});
+  const dataTasadores = Object.keys(tasadoresCount).map(k => ({ name: k, value: tasadoresCount[k] }));
+
+  const provinciasCount = datosFiltrados.reduce((acc, curr) => { const k = curr.provincia || 'Desconocido'; acc[k] = (acc[k] || 0) + 1; return acc; }, {});
+  const dataProvincias = Object.keys(provinciasCount).map(k => ({ name: k, value: provinciasCount[k] }));
 
   // Preparar datos para gráfico de municipios
   const municipiosCount = datosFiltrados.reduce((acc, curr) => {
@@ -77,6 +130,7 @@ export default function Dashboard() {
           <h2>Dashboard Analítico</h2>
           <p className="text-muted">Resumen interactivo de tasaciones</p>
         </div>
+        <ConnectionStatus />
       </header>
 
       {/* Panel de Filtros */}
@@ -107,8 +161,89 @@ export default function Dashboard() {
               {opcionesEstados.map(e => <option key={e} value={e}>{e}</option>)}
             </select>
           </div>
+          {/* Nuevos filtros */}
+          <div className="form-group">
+            <label>Tipo de Cultivo</label>
+            <select value={filtroCultivo} onChange={e => setFiltroCultivo(e.target.value)}>
+              <option value="">Todos los cultivos</option>
+              {opcionesCultivos.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Año</label>
+            <select value={filtroAnio} onChange={e => setFiltroAnio(e.target.value)}>
+              <option value="">Todos los años</option>
+              {opcionesAnios.map(a => <option key={a} value={a}>{a}</option>)}
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Tasador</label>
+            <select value={filtroTasador} onChange={e => setFiltroTasador(e.target.value)}>
+              <option value="">Todos los tasadores</option>
+              {opcionesTasadores.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Base Municipio (para distancia)</label>
+            <select value={baseMunicipio} onChange={e => setBaseMunicipio(e.target.value)}>
+              <option value="">Selecciona municipio</option>
+              {opcionesMunicipios.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Radio (km)</label>
+            <input type="number" min="0" value={radioKm} onChange={e => setRadioKm(e.target.value)} placeholder="Ej: 10" />
+          </div>
         </div>
       </div>
+
+       {/* Visualizaciones superiores */}
+       <div className="charts-row" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
+         <div style={{ flex: '1 1 300px', minWidth: '300px', height: '300px' }}>
+           <ResponsiveContainer>
+             <BarChart data={dataCultivos}>
+               <CartesianGrid strokeDasharray="3 3" />
+               <XAxis dataKey="name" />
+               <YAxis />
+               <Tooltip />
+               <Bar dataKey="value" fill="var(--accent)" />
+             </BarChart>
+           </ResponsiveContainer>
+         </div>
+         <div style={{ flex: '1 1 300px', minWidth: '300px', height: '300px' }}>
+           <ResponsiveContainer>
+             <BarChart data={dataAnios}>
+               <CartesianGrid strokeDasharray="3 3" />
+               <XAxis dataKey="name" />
+               <YAxis />
+               <Tooltip />
+               <Bar dataKey="value" fill="var(--accent)" />
+             </BarChart>
+           </ResponsiveContainer>
+         </div>
+         <div style={{ flex: '1 1 300px', minWidth: '300px', height: '300px' }}>
+           <ResponsiveContainer>
+             <BarChart data={dataTasadores}>
+               <CartesianGrid strokeDasharray="3 3" />
+               <XAxis dataKey="name" />
+               <YAxis />
+               <Tooltip />
+               <Bar dataKey="value" fill="var(--accent)" />
+             </BarChart>
+           </ResponsiveContainer>
+         </div>
+         <div style={{ flex: '1 1 300px', minWidth: '300px', height: '300px' }}>
+           <ResponsiveContainer>
+             <BarChart data={dataProvincias}>
+               <CartesianGrid strokeDasharray="3 3" />
+               <XAxis dataKey="name" />
+               <YAxis />
+               <Tooltip />
+               <Bar dataKey="value" fill="var(--accent)" />
+             </BarChart>
+           </ResponsiveContainer>
+         </div>
+       </div>
 
       <div className="kpi-grid">
         <div className="kpi-card">

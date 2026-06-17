@@ -3,30 +3,36 @@ import { UploadCloud, CheckCircle, AlertTriangle, ArrowRight, Eye } from 'lucide
 import { useNavigate } from 'react-router-dom';
 
 export default function ImportarJSON() {
-  const [file, setFile] = useState(null);
-  const [status, setStatus] = useState('idle'); // idle, loaded, mapping, uploading, success, error
+  const [files, setFiles] = useState([]); // multiple selected files
+  const [status, setStatus] = useState('idle'); // idle, loaded, uploading, success, error
   const [message, setMessage] = useState('');
   const [rawData, setRawData] = useState([]);
   const navigate = useNavigate();
 
-  const handleFileChange = async (e) => {
-    if (e.target.files && e.target.files[0]) {
-      const selectedFile = e.target.files[0];
-      setFile(selectedFile);
-      
-      try {
-        const text = await selectedFile.text();
+  const handleFiles = async (fileList) => {
+    if (!fileList || fileList.length === 0) return;
+    const selected = Array.from(fileList);
+    setFiles(selected);
+    try {
+      const allData = [];
+      for (const f of selected) {
+        const text = await f.text();
         const json = JSON.parse(text);
-        // Normalizar a array
         const dataArray = Array.isArray(json) ? json : [json];
-        setRawData(dataArray);
-        setStatus('loaded');
-        setMessage('');
-      } catch(err) {
-        setStatus('error');
-        setMessage('El archivo no es un JSON válido');
+        allData.push(...dataArray);
       }
+      setRawData(allData);
+      setStatus('loaded');
+      setMessage('');
+    } catch (err) {
+      console.error(err);
+      setStatus('error');
+      setMessage('Alguno de los archivos no es un JSON válido');
     }
+  };
+
+  const handleFileChange = (e) => {
+    handleFiles(e.target.files);
   };
 
   const procesarYSubir = async () => {
@@ -66,7 +72,7 @@ export default function ImportarJSON() {
 
       setStatus('success');
       setMessage(`Se han importado ${mappedData.length} registros correctamente.`);
-      setFile(null);
+      setFiles([]);
       setRawData([]);
     } catch (err) {
       console.error(err);
@@ -75,7 +81,20 @@ export default function ImportarJSON() {
     }
   };
 
-  const localizeEnMapa = (lat, lng) => {
+   // Drag & drop handlers
+   const onDragOver = (e) => {
+     e.preventDefault();
+     e.stopPropagation();
+   };
+   const onDrop = (e) => {
+     e.preventDefault();
+     e.stopPropagation();
+     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+       handleFiles(e.dataTransfer.files);
+       e.dataTransfer.clearData();
+     }
+   };
+   const localizeEnMapa = (lat, lng) => {
     // Para simplificar, en esta vista solo abrimos el mapa, la comunicación de coordenadas se haría por el store
     navigate('/');
   };
@@ -88,13 +107,14 @@ export default function ImportarJSON() {
       </header>
 
       {status === 'idle' || status === 'error' || status === 'success' ? (
-        <div className="card import-card">
+        <div className="card import-card" onDragOver={onDragOver} onDrop={onDrop}>
           <div className="upload-zone">
             <UploadCloud size={48} className="upload-icon" />
             <h3>Selecciona o arrastra tu archivo JSON</h3>
             <input 
               type="file" 
-              accept=".json" 
+              accept=".json"
+              multiple
               onChange={handleFileChange} 
               className="file-input"
               id="file-upload"
@@ -102,7 +122,7 @@ export default function ImportarJSON() {
             <label htmlFor="file-upload" className="btn-primary">
               Buscar archivo
             </label>
-            {file && <p className="file-name">Archivo seleccionado: {file.name}</p>}
+            {files.length > 0 && <p className="file-name">Seleccionados: {files.length} archivo(s)</p>}
           </div>
 
           {status === 'success' && (
