@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { Map, BarChart3, Upload, PlusSquare, LogOut } from 'lucide-react';
+import { Map, BarChart3, Upload, PlusSquare, LogOut, Users } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
 export default function Layout() {
@@ -31,6 +31,11 @@ export default function Layout() {
           <NavLink to="/dashboard" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
             <BarChart3 size={20} />
             <span>Dashboard</span>
+          </NavLink>
+
+          <NavLink to="/usuarios" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
+            <Users size={20} />
+            <span>Gestión Usuarios</span>
           </NavLink>
 
           <NavLink to="/importar" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>

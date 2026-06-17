@@ -6,6 +6,7 @@ import Layout from "./components/Layout";
 import Login from "./pages/Login";
 import Mapa from "./pages/Mapa";
 import Dashboard from "./pages/Dashboard";
+import Usuarios from "./pages/Usuarios";
 import ImportarJSON from "./pages/ImportarJSON";
 import NuevaFicha from "./pages/NuevaFicha";
 
@@ -25,6 +26,7 @@ export default function App() {
         <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
           <Route index element={<Mapa />} />
           <Route path="dashboard" element={<Dashboard />} />
+          <Route path="usuarios" element={<Usuarios />} />
           <Route path="importar" element={<ImportarJSON />} />
           <Route path="nueva-ficha" element={<NuevaFicha />} />
         </Route>
