@@ -17,7 +17,7 @@ export default function Login() {
     setError('');
 
     try {
-      const BASE_URL = import.meta.env.VITE_API_URL;
+      const BASE_URL = import.meta.env.VITE_API_URL || 'https://n8n-postgrest-api.n9xpuu.easypanel.host';
       // Petición al endpoint de usuarios
       const res = await fetch(`${BASE_URL}/usuarios?email=eq.${encodeURIComponent(email)}&password=eq.${encodeURIComponent(password)}`);
       const data = await res.json();
@@ -57,6 +57,7 @@ export default function Login() {
               value={email}
               onChange={(e)=>setEmail(e.target.value)}
               placeholder="usuario@ejemplo.com"
+              autoComplete="username"
               required 
             />
           </div>
@@ -68,6 +69,7 @@ export default function Login() {
               value={password}
               onChange={(e)=>setPassword(e.target.value)}
               placeholder="••••••••"
+              autoComplete="current-password"
               required 
             />
           </div>

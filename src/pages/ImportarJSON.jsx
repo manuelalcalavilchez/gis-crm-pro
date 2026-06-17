@@ -22,7 +22,7 @@ export default function ImportarJSON() {
       const text = await file.text();
       const json = JSON.parse(text);
 
-      const BASE_URL = import.meta.env.VITE_API_URL;
+      const BASE_URL = import.meta.env.VITE_API_URL || 'https://n8n-postgrest-api.n9xpuu.easypanel.host';
       const res = await fetch(`${BASE_URL}/informes_tasacion`, {
         method: 'POST',
         headers: {
