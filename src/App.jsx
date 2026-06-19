@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Usuarios from "./pages/Usuarios";
 import ImportarJSON from "./pages/ImportarJSON";
 import NuevaFicha from "./pages/NuevaFicha";
+import FichaDetalle from "./pages/FichaDetalle";
 
 // Wrapper para proteger rutas
 function ProtectedRoute({ children }) {
@@ -21,14 +22,15 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
-        
-        {/* Rutas protegidas que usan el Layout principal */}
+
+        {/* Rutas protegidas con Layout principal */}
         <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
           <Route index element={<Mapa />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="usuarios" element={<Usuarios />} />
           <Route path="importar" element={<ImportarJSON />} />
           <Route path="nueva-ficha" element={<NuevaFicha />} />
+          <Route path="ficha/:id" element={<FichaDetalle />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" />} />

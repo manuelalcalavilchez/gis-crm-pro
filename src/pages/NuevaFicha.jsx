@@ -1,154 +1,221 @@
 import { useState } from 'react';
-import { Save } from 'lucide-react';
-import { createInforme } from '../api/postgrest';
+import { Save, MapPin, RotateCcw } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { createTasacion } from '../api/postgrest';
+
+const TIPOS = ['Rústico', 'Urbano', 'Industrial', 'Comercial', 'Residencial'];
+const ESTADOS = ['Finalizado', 'Pendiente', 'En proceso', 'Cancelado'];
 
 export default function NuevaFicha() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    numero_informe: '',
-    solicitante_nombre: '',
-    municipio: '',
-    provincia: '',
-    direccion: '',
-    paraje: '',
-    uso_predominante: '',
-    clase_general: '',
-    estado_actual: '',
-    finalidad: '',
-    sociedad_nombre: '',
-    fecha_emision: '',
-    latitud: '',
-    longitud: '',
-    valor_mercado_adoptado: ''
+    referencia: '',
+    tipo: 'Rústico',
+    propietario: '',
+    localidad: '',
+    estado: 'Finalizado',
+    valor: '',
+    superficie: '',
+    lote: '',
+    observaciones: ''
   });
   const [status, setStatus] = useState('idle');
+  const [errorMsg, setErrorMsg] = useState('');
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const generateRef = () => {
+    const prefix = formData.tipo ? formData.tipo.substring(0, 3).toUpperCase() : 'TAS';
+    const timestamp = Date.now().toString(36).toUpperCase();
+    setFormData({ ...formData, referencia: `${prefix}-${timestamp}` });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus('saving');
+    setErrorMsg('');
 
     try {
-      // Formatear números
       const payload = {
-        ...formData,
-        latitud: formData.latitud ? parseFloat(formData.latitud) : null,
-        longitud: formData.longitud ? parseFloat(formData.longitud) : null,
-        valor_mercado_adoptado: formData.valor_mercado_adoptado ? parseFloat(formData.valor_mercado_adoptado) : null,
-        fecha_emision: formData.fecha_emision || null
+        referencia: formData.referencia,
+        tipo: formData.tipo,
+        propietario: formData.propietario || 'Desconocido',
+        localidad: formData.localidad || 'Almería',
+        estado: formData.estado,
+        valor: Number(formData.valor) || 0,
+        superficie: Number(formData.superficie) || 0,
+        lote: formData.lote || '36.8381,-2.4597',
+        observaciones: formData.observaciones || null
       };
 
-      await createInforme(payload);
-      
+      const result = await createTasacion(payload);
+
       setStatus('success');
-      setFormData({
-        numero_informe: '', solicitante_nombre: '', municipio: '', provincia: '',
-        direccion: '', paraje: '', uso_predominante: '', clase_general: '',
-        estado_actual: '', finalidad: '', sociedad_nombre: '', fecha_emision: '',
-        latitud: '', longitud: '', valor_mercado_adoptado: ''
-      });
-      setTimeout(() => setStatus('idle'), 3000);
+      // Redirigir a la ficha creada después de un momento
+      setTimeout(() => {
+        if (result && result[0]?.id) {
+          navigate(`/ficha/${result[0].id}`);
+        } else {
+          navigate('/dashboard');
+        }
+      }, 1500);
     } catch (err) {
       console.error(err);
       setStatus('error');
+      setErrorMsg(err.message || 'Error al guardar. Verifica que la referencia sea única.');
     }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      referencia: '', tipo: 'Rústico', propietario: '', localidad: '',
+      estado: 'Finalizado', valor: '', superficie: '', lote: '', observaciones: ''
+    });
+    setStatus('idle');
+    setErrorMsg('');
   };
 
   return (
     <div className="page-container">
       <header className="page-header">
         <h2>Nueva Ficha de Tasación</h2>
-        <p className="text-muted">Introduce los datos manualmente para un nuevo registro.</p>
+        <p className="text-muted">Introduce los datos para registrar una nueva tasación en el sistema.</p>
       </header>
 
       <form onSubmit={handleSubmit} className="form-card">
+        {/* Identificación */}
         <div className="form-section">
-          <h3>Datos Generales</h3>
+          <h3>Identificación</h3>
           <div className="form-grid">
             <div className="form-group">
-              <label>Número de Informe</label>
-              <input required name="numero_informe" value={formData.numero_informe} onChange={handleChange} />
+              <label>Referencia *</label>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input
+                  required
+                  name="referencia"
+                  value={formData.referencia}
+                  onChange={handleChange}
+                  placeholder="Ej: RUS-ABC123"
+                  style={{ flex: 1 }}
+                />
+                <button type="button" className="btn-icon" onClick={generateRef} title="Generar automáticamente">
+                  <RotateCcw size={16} />
+                </button>
+              </div>
             </div>
             <div className="form-group">
-              <label>Solicitante</label>
-              <input required name="solicitante_nombre" value={formData.solicitante_nombre} onChange={handleChange} />
+              <label>Tipo de Inmueble</label>
+              <select name="tipo" value={formData.tipo} onChange={handleChange}>
+                {TIPOS.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
             </div>
             <div className="form-group">
-              <label>Sociedad Tasadora</label>
-              <input name="sociedad_nombre" value={formData.sociedad_nombre} onChange={handleChange} placeholder="Ej: Valoraciones Mediterráneo, S.A." />
+              <label>Estado</label>
+              <select name="estado" value={formData.estado} onChange={handleChange}>
+                {ESTADOS.map(e => <option key={e} value={e}>{e}</option>)}
+              </select>
             </div>
             <div className="form-group">
-              <label>Finalidad</label>
-              <input name="finalidad" value={formData.finalidad} onChange={handleChange} placeholder="Ej: Asesoramiento - Valor de mercado" />
-            </div>
-            <div className="form-group">
-              <label>Fecha de Emisión</label>
-              <input type="date" name="fecha_emision" value={formData.fecha_emision} onChange={handleChange} />
+              <label>Propietario / Cliente</label>
+              <input
+                name="propietario"
+                value={formData.propietario}
+                onChange={handleChange}
+                placeholder="Nombre del propietario o tasador"
+              />
             </div>
           </div>
         </div>
 
+        {/* Ubicación */}
         <div className="form-section">
-          <h3>Ubicación y Geometría</h3>
+          <h3><MapPin size={16} style={{ display: 'inline', marginRight: '0.5rem' }} />Ubicación</h3>
           <div className="form-grid">
             <div className="form-group">
-              <label>Provincia</label>
-              <input required name="provincia" value={formData.provincia} onChange={handleChange} />
+              <label>Localidad *</label>
+              <input
+                required
+                name="localidad"
+                value={formData.localidad}
+                onChange={handleChange}
+                placeholder="Ej: Almería, Roquetas de Mar..."
+              />
             </div>
             <div className="form-group">
-              <label>Municipio</label>
-              <input required name="municipio" value={formData.municipio} onChange={handleChange} />
-            </div>
-            <div className="form-group">
-              <label>Dirección</label>
-              <input name="direccion" value={formData.direccion} onChange={handleChange} />
-            </div>
-            <div className="form-group">
-              <label>Paraje</label>
-              <input name="paraje" value={formData.paraje} onChange={handleChange} />
-            </div>
-            <div className="form-group">
-              <label>Latitud</label>
-              <input type="number" step="any" required name="latitud" value={formData.latitud} onChange={handleChange} />
-            </div>
-            <div className="form-group">
-              <label>Longitud</label>
-              <input type="number" step="any" required name="longitud" value={formData.longitud} onChange={handleChange} />
+              <label>Coordenadas GPS (lat,lng)</label>
+              <input
+                name="lote"
+                value={formData.lote}
+                onChange={handleChange}
+                placeholder="36.8381,-2.4597"
+              />
+              <small className="form-hint">Formato: latitud,longitud</small>
             </div>
           </div>
         </div>
 
+        {/* Valoración */}
         <div className="form-section">
-          <h3>Detalles de Tasación</h3>
+          <h3>Valoración</h3>
           <div className="form-grid">
-            <div className="form-group">
-              <label>Clase General</label>
-              <input name="clase_general" value={formData.clase_general} onChange={handleChange} placeholder="Ej: Finca Rústica" />
-            </div>
-            <div className="form-group">
-              <label>Uso Predominante</label>
-              <input required name="uso_predominante" value={formData.uso_predominante} onChange={handleChange} />
-            </div>
-            <div className="form-group">
-              <label>Estado Actual</label>
-              <input required name="estado_actual" value={formData.estado_actual} onChange={handleChange} />
-            </div>
             <div className="form-group highlight-group">
-              <label>Valor de Mercado (€)</label>
-              <input type="number" step="any" required name="valor_mercado_adoptado" value={formData.valor_mercado_adoptado} onChange={handleChange} />
+              <label>Valor de Mercado (€) *</label>
+              <input
+                type="number"
+                step="0.01"
+                required
+                name="valor"
+                value={formData.valor}
+                onChange={handleChange}
+                placeholder="0.00"
+              />
+            </div>
+            <div className="form-group">
+              <label>Superficie (m²)</label>
+              <input
+                type="number"
+                step="0.01"
+                name="superficie"
+                value={formData.superficie}
+                onChange={handleChange}
+                placeholder="0.00"
+              />
             </div>
           </div>
         </div>
 
+        {/* Observaciones */}
+        <div className="form-section">
+          <h3>Observaciones</h3>
+          <div className="form-group">
+            <textarea
+              name="observaciones"
+              value={formData.observaciones}
+              onChange={handleChange}
+              placeholder="Notas adicionales, parajes, cargas, detalles del terreno..."
+              rows={4}
+              className="form-textarea"
+            />
+          </div>
+        </div>
+
+        {/* Acciones */}
         <div className="form-actions">
-          {status === 'error' && <span className="text-error">Error al guardar. Verifica los datos.</span>}
-          {status === 'success' && <span className="text-success">¡Ficha guardada con éxito!</span>}
-          <button type="submit" className="btn-primary" disabled={status === 'saving'}>
-            <Save size={18} />
-            <span>{status === 'saving' ? 'Guardando...' : 'Guardar Ficha'}</span>
-          </button>
+          <div>
+            {status === 'error' && <span className="text-error">{errorMsg}</span>}
+            {status === 'success' && <span className="text-success">¡Ficha creada con éxito! Redirigiendo...</span>}
+          </div>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <button type="button" className="btn-secondary" onClick={resetForm}>
+              <RotateCcw size={16} /> Limpiar
+            </button>
+            <button type="submit" className="btn-primary" disabled={status === 'saving'}>
+              <Save size={18} />
+              <span>{status === 'saving' ? 'Guardando...' : 'Crear Ficha'}</span>
+            </button>
+          </div>
         </div>
       </form>
     </div>

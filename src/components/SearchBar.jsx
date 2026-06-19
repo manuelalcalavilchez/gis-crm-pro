@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Search } from "lucide-react";
 
 export default function SearchBar({ onSearch, loading }) {
   const [q, setQ] = useState("");
@@ -10,19 +11,22 @@ export default function SearchBar({ onSearch, loading }) {
 
   return (
     <form className="search-form" onSubmit={handleSubmit}>
-      <input 
-        className="search-input"
-        value={q} 
-        onChange={(e)=>setQ(e.target.value)} 
-        placeholder="Buscar por solicitante..." 
-        disabled={loading}
-      />
-      <button 
-        type="submit" 
+      <div className="search-input-wrapper">
+        <Search size={16} />
+        <input
+          className="search-input"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Buscar por referencia, localidad, propietario..."
+          disabled={loading}
+        />
+      </div>
+      <button
+        type="submit"
         className="search-button"
         disabled={loading}
       >
-        {loading ? '...' : 'Buscar'}
+        {loading ? <div className="spinner-sm"></div> : 'Buscar'}
       </button>
     </form>
   );

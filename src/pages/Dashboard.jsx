@@ -1,311 +1,362 @@
 import { useState, useEffect, useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
-import { Filter } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
+import { Filter, TrendingUp, MapPin, Euro, FileText, RefreshCw } from 'lucide-react';
 import ConnectionStatus from '../components/ConnectionStatus.jsx';
-import { searchItems } from '../api/postgrest';
+import { searchTasaciones } from '../api/postgrest';
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#6366f1'];
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6', '#f97316', '#06b6d4'];
 
 export default function Dashboard() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Filtros de estado
-  const [filtroProvincia, setFiltroProvincia] = useState('');
-  const [filtroUso, setFiltroUso] = useState('');
+  // Filtros
+  const [filtroTipo, setFiltroTipo] = useState('');
+  const [filtroLocalidad, setFiltroLocalidad] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('');
-  // Nuevos filtros
-  const [filtroCultivo, setFiltroCultivo] = useState('');
+  const [filtroPropietario, setFiltroPropietario] = useState('');
   const [filtroAnio, setFiltroAnio] = useState('');
-  const [filtroTasador, setFiltroTasador] = useState('');
-  const [baseMunicipio, setBaseMunicipio] = useState('');
-  const [radioKm, setRadioKm] = useState('');
+  const [filtroValorMin, setFiltroValorMin] = useState('');
+  const [filtroValorMax, setFiltroValorMax] = useState('');
 
+  const fetchData = async () => {
+    try {
+      const res = await searchTasaciones('');
+      setData(res);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await searchItems('');
-        setData(res);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  useEffect(() => { fetchData(); }, []);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
     fetchData();
-  }, []);
+  };
 
-  // Extraer opciones únicas para los selects de filtro
-   const opcionesProvincias = useMemo(() => [...new Set(data.map(d => d.provincia).filter(Boolean))], [data]);
-   const opcionesUsos = useMemo(() => [...new Set(data.map(d => d.uso_predominante).filter(Boolean))], [data]);
-   const opcionesEstados = useMemo(() => [...new Set(data.map(d => d.estado_actual).filter(Boolean))], [data]);
-   const opcionesCultivos = useMemo(() => [...new Set(data.map(d => d.clase_general).filter(Boolean))], [data]);
-   const opcionesAnios = useMemo(() => {
-     const years = data.map(d => {
-       const f = d.fecha_emision || d.fecha_creacion_registro;
-       return f ? String(new Date(f).getFullYear()) : null;
-     }).filter(Boolean);
-     return [...new Set(years)].sort();
-   }, [data]);
-   const opcionesTasadores = useMemo(() => [...new Set(data.map(d => d.sociedad_nombre).filter(Boolean))], [data]);
-   const opcionesMunicipios = useMemo(() => [...new Set(data.map(d => d.municipio).filter(Boolean))], [data]);
+  // Opciones únicas para filtros
+  const opcionesTipos = useMemo(() => [...new Set(data.map(d => d.tipo).filter(Boolean))].sort(), [data]);
+  const opcionesLocalidades = useMemo(() => [...new Set(data.map(d => d.localidad).filter(Boolean))].sort(), [data]);
+  const opcionesEstados = useMemo(() => [...new Set(data.map(d => d.estado).filter(Boolean))].sort(), [data]);
+  const opcionesPropietarios = useMemo(() => [...new Set(data.map(d => d.propietario).filter(Boolean))].sort(), [data]);
+  const opcionesAnios = useMemo(() => {
+    const years = data.map(d => d.fecha ? String(new Date(d.fecha).getFullYear()) : null).filter(Boolean);
+    return [...new Set(years)].sort().reverse();
+  }, [data]);
 
-
-  // Aplicar filtros a los datos
+  // Aplicar filtros
   const datosFiltrados = useMemo(() => {
-     return data.filter(item => {
-       if (filtroProvincia && item.provincia !== filtroProvincia) return false;
-       if (filtroUso && item.uso_predominante !== filtroUso) return false;
-       if (filtroEstado && item.estado_actual !== filtroEstado) return false;
-       if (filtroCultivo && item.clase_general !== filtroCultivo) return false;
-       if (filtroAnio) {
-         const f = item.fecha_emision || item.fecha_creacion_registro;
-         const itemAnio = f ? String(new Date(f).getFullYear()) : '';
-         if (itemAnio !== filtroAnio) return false;
-       }
-       if (filtroTasador && item.sociedad_nombre !== filtroTasador) return false;
-       // Filtro por distancia
-       if (baseMunicipio && radioKm) {
-         const base = data.find(d => d.municipio === baseMunicipio);
-         if (base && base.latitud && base.longitud) {
-           const distance = getDistanceFromLatLonInKm(base.latitud, base.longitud, item.latitud, item.longitud);
-           if (distance > Number(radioKm)) return false;
-         }
-       }
-       return true;
-     });
+    return data.filter(item => {
+      if (filtroTipo && item.tipo !== filtroTipo) return false;
+      if (filtroLocalidad && item.localidad !== filtroLocalidad) return false;
+      if (filtroEstado && item.estado !== filtroEstado) return false;
+      if (filtroPropietario && item.propietario !== filtroPropietario) return false;
+      if (filtroAnio) {
+        const itemAnio = item.fecha ? String(new Date(item.fecha).getFullYear()) : '';
+        if (itemAnio !== filtroAnio) return false;
+      }
+      if (filtroValorMin && Number(item.valor) < Number(filtroValorMin)) return false;
+      if (filtroValorMax && Number(item.valor) > Number(filtroValorMax)) return false;
+      return true;
+    });
+  }, [data, filtroTipo, filtroLocalidad, filtroEstado, filtroPropietario, filtroAnio, filtroValorMin, filtroValorMax]);
 
-  }, [data, filtroProvincia, filtroUso, filtroEstado, filtroCultivo, filtroAnio, filtroTasador, baseMunicipio, radioKm]);
+  const limpiarFiltros = () => {
+    setFiltroTipo('');
+    setFiltroLocalidad('');
+    setFiltroEstado('');
+    setFiltroPropietario('');
+    setFiltroAnio('');
+    setFiltroValorMin('');
+    setFiltroValorMax('');
+  };
+
+  const hayFiltros = filtroTipo || filtroLocalidad || filtroEstado || filtroPropietario || filtroAnio || filtroValorMin || filtroValorMax;
 
   if (loading) {
-    return <div className="loading-state">Cargando métricas...</div>;
+    return (
+      <div className="loading-state">
+        <div className="spinner"></div>
+        <p>Cargando métricas...</p>
+      </div>
+    );
   }
 
+  // KPIs
   const totalTasaciones = datosFiltrados.length;
-  const totalValor = datosFiltrados.reduce((acc, curr) => acc + (Number(curr.valor_mercado_adoptado) || 0), 0);
+  const totalValor = datosFiltrados.reduce((acc, curr) => acc + (Number(curr.valor) || 0), 0);
   const avgValor = totalTasaciones ? (totalValor / totalTasaciones) : 0;
+  const totalSuperficie = datosFiltrados.reduce((acc, curr) => acc + (Number(curr.superficie) || 0), 0);
+  const avgSuperficie = totalTasaciones ? (totalSuperficie / totalTasaciones) : 0;
 
-   // Función de distancia (haversine)
-   function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
-     const R = 6371; // Radio de la Tierra en km
-     const dLat = deg2rad(lat2 - lat1);
-     const dLon = deg2rad(lon2 - lon1);
-     const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-               Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
-               Math.sin(dLon/2) * Math.sin(dLon/2);
-     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-     return R * c;
-   }
-   function deg2rad(deg) {
-     return deg * (Math.PI/180);
-   }
-
-  // Preparar datos para gráfico de usos
-  const usosCount = datosFiltrados.reduce((acc, curr) => {
-    const uso = curr.uso_predominante || 'Desconocido';
-    acc[uso] = (acc[uso] || 0) + 1;
+  // Gráfico por Tipo
+  const tiposCount = datosFiltrados.reduce((acc, curr) => {
+    const k = curr.tipo || 'Sin tipo';
+    acc[k] = (acc[k] || 0) + 1;
     return acc;
   }, {});
-  const dataUsos = Object.keys(usosCount).map(key => ({ name: key, value: usosCount[key] }));
+  const dataTipos = Object.entries(tiposCount).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
 
-  // Preparar datos para gráficos superiores
-  const cultivosCount = datosFiltrados.reduce((acc, curr) => { const k = curr.clase_general || 'Desconocido'; acc[k] = (acc[k] || 0) + 1; return acc; }, {});
-  const dataCultivos = Object.keys(cultivosCount).map(k => ({ name: k, value: cultivosCount[k] }));
-
-  const aniosCount = datosFiltrados.reduce((acc, curr) => { const f = curr.fecha_emision || curr.fecha_creacion_registro; const k = f ? new Date(f).getFullYear() : 'Desconocido'; acc[k] = (acc[k] || 0) + 1; return acc; }, {});
-  const dataAnios = Object.keys(aniosCount).map(k => ({ name: k, value: aniosCount[k] }));
-
-  const tasadoresCount = datosFiltrados.reduce((acc, curr) => { const k = curr.sociedad_nombre || 'Desconocido'; acc[k] = (acc[k] || 0) + 1; return acc; }, {});
-  const dataTasadores = Object.keys(tasadoresCount).map(k => ({ name: k, value: tasadoresCount[k] }));
-
-  const provinciasCount = datosFiltrados.reduce((acc, curr) => { const k = curr.provincia || 'Desconocido'; acc[k] = (acc[k] || 0) + 1; return acc; }, {});
-  const dataProvincias = Object.keys(provinciasCount).map(k => ({ name: k, value: provinciasCount[k] }));
-
-  // Preparar datos para gráfico de municipios
-  const municipiosCount = datosFiltrados.reduce((acc, curr) => {
-    const mun = curr.municipio || 'Desconocido';
-    acc[mun] = (acc[mun] || 0) + 1;
+  // Gráfico por Localidad (Top 10)
+  const localidadesCount = datosFiltrados.reduce((acc, curr) => {
+    const k = curr.localidad || 'Sin localidad';
+    acc[k] = (acc[k] || 0) + 1;
     return acc;
   }, {});
-  const dataMunicipios = Object.keys(municipiosCount)
-    .map(key => ({ name: key, cantidad: municipiosCount[key] }))
-    .sort((a,b) => b.cantidad - a.cantidad)
-    .slice(0, 7); // Top 7
+  const dataLocalidades = Object.entries(localidadesCount)
+    .map(([name, cantidad]) => ({ name, cantidad }))
+    .sort((a, b) => b.cantidad - a.cantidad)
+    .slice(0, 10);
+
+  // Gráfico por Estado
+  const estadosCount = datosFiltrados.reduce((acc, curr) => {
+    const k = curr.estado || 'Sin estado';
+    acc[k] = (acc[k] || 0) + 1;
+    return acc;
+  }, {});
+  const dataEstados = Object.entries(estadosCount).map(([name, value]) => ({ name, value }));
+
+  // Evolución temporal (por mes)
+  const evolucionMensual = datosFiltrados.reduce((acc, curr) => {
+    if (!curr.fecha) return acc;
+    const d = new Date(curr.fecha);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    if (!acc[key]) acc[key] = { mes: key, cantidad: 0, valorTotal: 0 };
+    acc[key].cantidad += 1;
+    acc[key].valorTotal += Number(curr.valor) || 0;
+    return acc;
+  }, {});
+  const dataEvolucion = Object.values(evolucionMensual).sort((a, b) => a.mes.localeCompare(b.mes));
+
+  // Valor por propietario (Top 8)
+  const propietariosValor = datosFiltrados.reduce((acc, curr) => {
+    const k = curr.propietario || 'Sin propietario';
+    if (!acc[k]) acc[k] = { nombre: k, valor: 0, count: 0 };
+    acc[k].valor += Number(curr.valor) || 0;
+    acc[k].count += 1;
+    return acc;
+  }, {});
+  const dataPropietarios = Object.values(propietariosValor)
+    .sort((a, b) => b.valor - a.valor)
+    .slice(0, 8)
+    .map(p => ({ name: p.nombre, valor: Math.round(p.valor), fichas: p.count }));
 
   return (
     <div className="page-container dashboard-page">
-      <header className="page-header" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'}}>
+      <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h2>Dashboard Analítico</h2>
-          <p className="text-muted">Resumen interactivo de tasaciones</p>
+          <p className="text-muted">
+            Resumen interactivo de tasaciones
+            {hayFiltros && <span className="filter-badge">{datosFiltrados.length} de {data.length} registros</span>}
+          </p>
         </div>
-        <ConnectionStatus />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <button className="btn-icon" onClick={handleRefresh} disabled={refreshing} title="Actualizar datos">
+            <RefreshCw size={18} className={refreshing ? 'spinning' : ''} />
+          </button>
+          <ConnectionStatus />
+        </div>
       </header>
 
       {/* Panel de Filtros */}
-      <div className="card" style={{ marginBottom: '2rem', padding: '1.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: 'var(--accent)' }}>
-          <Filter size={18} />
-          <h3 style={{ margin: 0 }}>Filtros Avanzados</h3>
+      <div className="card filter-panel">
+        <div className="filter-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Filter size={18} />
+            <h3>Filtros</h3>
+          </div>
+          {hayFiltros && (
+            <button className="btn-link" onClick={limpiarFiltros}>Limpiar filtros</button>
+          )}
         </div>
-        <div className="form-grid">
+        <div className="form-grid form-grid-4">
           <div className="form-group">
-            <label>Provincia</label>
-            <select value={filtroProvincia} onChange={e => setFiltroProvincia(e.target.value)}>
-              <option value="">Todas las provincias</option>
-              {opcionesProvincias.map(p => <option key={p} value={p}>{p}</option>)}
+            <label>Tipo</label>
+            <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)}>
+              <option value="">Todos</option>
+              {opcionesTipos.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
           <div className="form-group">
-            <label>Uso Predominante</label>
-            <select value={filtroUso} onChange={e => setFiltroUso(e.target.value)}>
-              <option value="">Todos los usos</option>
-              {opcionesUsos.map(u => <option key={u} value={u}>{u}</option>)}
+            <label>Localidad</label>
+            <select value={filtroLocalidad} onChange={e => setFiltroLocalidad(e.target.value)}>
+              <option value="">Todas</option>
+              {opcionesLocalidades.map(l => <option key={l} value={l}>{l}</option>)}
             </select>
           </div>
           <div className="form-group">
-            <label>Estado Actual</label>
+            <label>Estado</label>
             <select value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)}>
-              <option value="">Todos los estados</option>
+              <option value="">Todos</option>
               {opcionesEstados.map(e => <option key={e} value={e}>{e}</option>)}
             </select>
           </div>
-          {/* Nuevos filtros */}
           <div className="form-group">
-            <label>Clase General</label>
-            <select value={filtroCultivo} onChange={e => setFiltroCultivo(e.target.value)}>
-              <option value="">Todas las clases</option>
-              {opcionesCultivos.map(c => <option key={c} value={c}>{c}</option>)}
+            <label>Propietario</label>
+            <select value={filtroPropietario} onChange={e => setFiltroPropietario(e.target.value)}>
+              <option value="">Todos</option>
+              {opcionesPropietarios.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
           </div>
           <div className="form-group">
             <label>Año</label>
             <select value={filtroAnio} onChange={e => setFiltroAnio(e.target.value)}>
-              <option value="">Todos los años</option>
+              <option value="">Todos</option>
               {opcionesAnios.map(a => <option key={a} value={a}>{a}</option>)}
             </select>
           </div>
           <div className="form-group">
-            <label>Sociedad Tasadora</label>
-            <select value={filtroTasador} onChange={e => setFiltroTasador(e.target.value)}>
-              <option value="">Todas las sociedades</option>
-              {opcionesTasadores.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
+            <label>Valor mín. (€)</label>
+            <input type="number" min="0" value={filtroValorMin} onChange={e => setFiltroValorMin(e.target.value)} placeholder="0" />
           </div>
           <div className="form-group">
-            <label>Base Municipio (para distancia)</label>
-            <select value={baseMunicipio} onChange={e => setBaseMunicipio(e.target.value)}>
-              <option value="">Selecciona municipio</option>
-              {opcionesMunicipios.map(m => <option key={m} value={m}>{m}</option>)}
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Radio (km)</label>
-            <input type="number" min="0" value={radioKm} onChange={e => setRadioKm(e.target.value)} placeholder="Ej: 10" />
+            <label>Valor máx. (€)</label>
+            <input type="number" min="0" value={filtroValorMax} onChange={e => setFiltroValorMax(e.target.value)} placeholder="Sin límite" />
           </div>
         </div>
       </div>
 
-       {/* Visualizaciones superiores */}
-       <div className="charts-row" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
-         <div style={{ flex: '1 1 300px', minWidth: '300px', height: '300px' }}>
-           <ResponsiveContainer>
-             <BarChart data={dataCultivos}>
-               <CartesianGrid strokeDasharray="3 3" />
-               <XAxis dataKey="name" />
-               <YAxis />
-               <Tooltip />
-               <Bar dataKey="value" fill="var(--accent)" />
-             </BarChart>
-           </ResponsiveContainer>
-         </div>
-         <div style={{ flex: '1 1 300px', minWidth: '300px', height: '300px' }}>
-           <ResponsiveContainer>
-             <BarChart data={dataAnios}>
-               <CartesianGrid strokeDasharray="3 3" />
-               <XAxis dataKey="name" />
-               <YAxis />
-               <Tooltip />
-               <Bar dataKey="value" fill="var(--accent)" />
-             </BarChart>
-           </ResponsiveContainer>
-         </div>
-         <div style={{ flex: '1 1 300px', minWidth: '300px', height: '300px' }}>
-           <ResponsiveContainer>
-             <BarChart data={dataTasadores}>
-               <CartesianGrid strokeDasharray="3 3" />
-               <XAxis dataKey="name" />
-               <YAxis />
-               <Tooltip />
-               <Bar dataKey="value" fill="var(--accent)" />
-             </BarChart>
-           </ResponsiveContainer>
-         </div>
-         <div style={{ flex: '1 1 300px', minWidth: '300px', height: '300px' }}>
-           <ResponsiveContainer>
-             <BarChart data={dataProvincias}>
-               <CartesianGrid strokeDasharray="3 3" />
-               <XAxis dataKey="name" />
-               <YAxis />
-               <Tooltip />
-               <Bar dataKey="value" fill="var(--accent)" />
-             </BarChart>
-           </ResponsiveContainer>
-         </div>
-       </div>
-
+      {/* KPIs */}
       <div className="kpi-grid">
         <div className="kpi-card">
-          <h3>Tasaciones (Filtradas)</h3>
-          <div className="kpi-value">{totalTasaciones}</div>
+          <div className="kpi-icon"><FileText size={24} /></div>
+          <div className="kpi-content">
+            <span className="kpi-label">Total Tasaciones</span>
+            <span className="kpi-value">{totalTasaciones.toLocaleString('es-ES')}</span>
+          </div>
         </div>
         <div className="kpi-card">
-          <h3>Valor Promedio</h3>
-          <div className="kpi-value">{avgValor.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</div>
+          <div className="kpi-icon kpi-icon-green"><Euro size={24} /></div>
+          <div className="kpi-content">
+            <span className="kpi-label">Valor Total</span>
+            <span className="kpi-value">{totalValor.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</span>
+          </div>
         </div>
         <div className="kpi-card">
-          <h3>Valor Total</h3>
-          <div className="kpi-value">{totalValor.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</div>
+          <div className="kpi-icon kpi-icon-purple"><TrendingUp size={24} /></div>
+          <div className="kpi-content">
+            <span className="kpi-label">Valor Promedio</span>
+            <span className="kpi-value">{avgValor.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}</span>
+          </div>
+        </div>
+        <div className="kpi-card">
+          <div className="kpi-icon kpi-icon-orange"><MapPin size={24} /></div>
+          <div className="kpi-content">
+            <span className="kpi-label">Sup. Media</span>
+            <span className="kpi-value">{avgSuperficie.toLocaleString('es-ES', { maximumFractionDigits: 0 })} m²</span>
+          </div>
         </div>
       </div>
 
+      {/* Gráficos */}
       <div className="charts-grid">
-        <div className="chart-card">
-          <h3>Top Municipios</h3>
+        {/* Evolución temporal */}
+        <div className="chart-card chart-card-wide">
+          <h3>Evolución Temporal</h3>
           <div className="chart-wrapper">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={dataMunicipios} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+            <ResponsiveContainer width="100%" height={280}>
+              <LineChart data={dataEvolucion} margin={{ top: 10, right: 30, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-                <XAxis dataKey="name" stroke="var(--text-muted)" tick={{fontSize: 12}} />
-                <YAxis stroke="var(--text-muted)" tick={{fontSize: 12}} />
-                <Tooltip contentStyle={{ backgroundColor: 'var(--bg-panel)', borderColor: 'var(--border-color)' }} />
+                <XAxis dataKey="mes" stroke="var(--text-muted)" tick={{ fontSize: 11 }} />
+                <YAxis yAxisId="left" stroke="var(--text-muted)" tick={{ fontSize: 11 }} />
+                <YAxis yAxisId="right" orientation="right" stroke="var(--text-muted)" tick={{ fontSize: 11 }} />
+                <Tooltip contentStyle={{ backgroundColor: 'var(--bg-panel)', borderColor: 'var(--border-color)', borderRadius: '8px' }} />
+                <Legend />
+                <Line yAxisId="left" type="monotone" dataKey="cantidad" name="Fichas" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
+                <Line yAxisId="right" type="monotone" dataKey="valorTotal" name="Valor (€)" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Top Localidades */}
+        <div className="chart-card">
+          <h3>Top Localidades</h3>
+          <div className="chart-wrapper">
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={dataLocalidades} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                <XAxis dataKey="name" stroke="var(--text-muted)" tick={{ fontSize: 10 }} angle={-20} textAnchor="end" height={60} />
+                <YAxis stroke="var(--text-muted)" tick={{ fontSize: 11 }} />
+                <Tooltip contentStyle={{ backgroundColor: 'var(--bg-panel)', borderColor: 'var(--border-color)', borderRadius: '8px' }} />
                 <Bar dataKey="cantidad" fill="var(--accent)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
+        {/* Distribución por Tipo */}
         <div className="chart-card">
-          <h3>Distribución por Uso</h3>
+          <h3>Distribución por Tipo</h3>
           <div className="chart-wrapper">
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={280}>
               <PieChart>
                 <Pie
-                  data={dataUsos}
+                  data={dataTipos}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
+                  innerRadius={50}
+                  outerRadius={90}
+                  paddingAngle={4}
                   dataKey="value"
+                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                  labelLine={false}
                 >
-                  {dataUsos.map((entry, index) => (
+                  {dataTipos.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={{ backgroundColor: 'var(--bg-panel)', borderColor: 'var(--border-color)' }} />
+                <Tooltip contentStyle={{ backgroundColor: 'var(--bg-panel)', borderColor: 'var(--border-color)', borderRadius: '8px' }} />
               </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Estado */}
+        <div className="chart-card">
+          <h3>Por Estado</h3>
+          <div className="chart-wrapper">
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart>
+                <Pie
+                  data={dataEstados}
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={90}
+                  dataKey="value"
+                  label={({ name, value }) => `${name}: ${value}`}
+                >
+                  {dataEstados.map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[(index + 3) % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ backgroundColor: 'var(--bg-panel)', borderColor: 'var(--border-color)', borderRadius: '8px' }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Valor por Propietario */}
+        <div className="chart-card chart-card-wide">
+          <h3>Top Propietarios por Valor</h3>
+          <div className="chart-wrapper">
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={dataPropietarios} layout="vertical" margin={{ top: 10, right: 30, left: 100, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                <XAxis type="number" stroke="var(--text-muted)" tick={{ fontSize: 11 }} />
+                <YAxis type="category" dataKey="name" stroke="var(--text-muted)" tick={{ fontSize: 11 }} width={90} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: 'var(--bg-panel)', borderColor: 'var(--border-color)', borderRadius: '8px' }}
+                  formatter={(value) => `${Number(value).toLocaleString('es-ES')} €`}
+                />
+                <Bar dataKey="valor" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>

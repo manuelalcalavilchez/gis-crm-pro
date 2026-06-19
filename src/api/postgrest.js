@@ -2,52 +2,110 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'https://n8n-postgrest-api.n9xp
 
 export { BASE_URL };
 
-// ── Informes de Tasación ──
+// ── Importación de Tasaciones (tabla principal) ──
 
-export async function searchItems(query) {
-  // Búsqueda global (or=)
-  let searchQuery = '';
+export async function searchTasaciones(query, filters = {}) {
+  let params = [];
+
+  // Búsqueda textual global
   if (query) {
     const q = encodeURIComponent(`*${query}*`);
-    searchQuery = `&or=(solicitante_nombre.ilike.${q},municipio.ilike.${q},numero_informe.ilike.${q},provincia.ilike.${q},uso_predominante.ilike.${q},paraje.ilike.${q})`;
+    params.push(`or=(referencia.ilike.${q},propietario.ilike.${q},localidad.ilike.${q},tipo.ilike.${q},observaciones.ilike.${q})`);
   }
-  
-  const res = await fetch(`${BASE_URL}/informes_tasacion?limit=50${searchQuery}`);
+
+  // Filtros exactos
+  if (filters.tipo) params.push(`tipo=eq.${encodeURIComponent(filters.tipo)}`);
+  if (filters.localidad) params.push(`localidad=eq.${encodeURIComponent(filters.localidad)}`);
+  if (filters.estado) params.push(`estado=eq.${encodeURIComponent(filters.estado)}`);
+  if (filters.propietario) params.push(`propietario=eq.${encodeURIComponent(filters.propietario)}`);
+
+  // Rango de fechas
+  if (filters.fechaDesde) params.push(`fecha=gte.${filters.fechaDesde}`);
+  if (filters.fechaHasta) params.push(`fecha=lte.${filters.fechaHasta}`);
+
+  // Rango de valor
+  if (filters.valorMin) params.push(`valor=gte.${filters.valorMin}`);
+  if (filters.valorMax) params.push(`valor=lte.${filters.valorMax}`);
+
+  // Ordenar por fecha descendente
+  params.push('order=fecha.desc');
+
+  const queryStr = params.length > 0 ? `?${params.join('&')}` : '';
+  const res = await fetch(`${BASE_URL}/importacion_tasaciones${queryStr}`);
+  if (!res.ok) throw new Error('Error al buscar tasaciones');
   return res.json();
 }
 
-export async function createInforme(payload) {
-  const res = await fetch(`${BASE_URL}/informes_tasacion`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-  if (!res.ok) throw new Error('Error al guardar informe');
-  return res;
+export async function getTasacionById(id) {
+  const res = await fetch(`${BASE_URL}/importacion_tasaciones?id=eq.${id}`);
+  if (!res.ok) throw new Error('Error al obtener tasación');
+  const data = await res.json();
+  return data[0] || null;
 }
 
-export async function importInformes(dataArray) {
-  const res = await fetch(`${BASE_URL}/informes_tasacion`, {
+export async function createTasacion(payload) {
+  const res = await fetch(`${BASE_URL}/importacion_tasaciones`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Prefer': 'return=representation'
     },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Error al crear tasación: ${errText}`);
+  }
+  return res.json();
+}
+
+export async function updateTasacion(id, payload) {
+  const res = await fetch(`${BASE_URL}/importacion_tasaciones?id=eq.${id}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error('Error al actualizar tasación');
+  return res.json();
+}
+
+export async function deleteTasacion(id) {
+  const res = await fetch(`${BASE_URL}/importacion_tasaciones?id=eq.${id}`, {
+    method: 'DELETE'
+  });
+  if (!res.ok) throw new Error('Error al eliminar tasación');
+  return res;
+}
+
+export async function importTasaciones(dataArray) {
+  const res = await fetch(`${BASE_URL}/importacion_tasaciones`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Prefer': 'resolution=merge-duplicates,return=representation'
+    },
     body: JSON.stringify(dataArray)
   });
-  if (!res.ok) throw new Error(`Error en el servidor: ${res.statusText}`);
-  return res;
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Error en importación: ${errText}`);
+  }
+  return res.json();
 }
 
 // ── Usuarios ──
 
 export async function loginUser(email, password) {
-  const res = await fetch(`${BASE_URL}/usuarios?email=eq.${encodeURIComponent(email)}&password=eq.${encodeURIComponent(password)}`);
+  const res = await fetch(`${BASE_URL}/usuarios?email=eq.${encodeURIComponent(email)}&password=eq.${encodeURIComponent(password)}&select=id,email,role,nombre`);
+  if (!res.ok) throw new Error('Error de conexión');
   return res.json();
 }
 
 export async function fetchUsuarios() {
-  const res = await fetch(`${BASE_URL}/usuarios`);
+  const res = await fetch(`${BASE_URL}/usuarios?select=id,email,role,nombre,created_at&order=created_at.desc`);
   if (!res.ok) throw new Error('Error al cargar usuarios');
   return res.json();
 }
@@ -55,17 +113,33 @@ export async function fetchUsuarios() {
 export async function createUsuario(userData) {
   const res = await fetch(`${BASE_URL}/usuarios`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    },
     body: JSON.stringify(userData)
   });
   if (!res.ok) throw new Error('Error al crear usuario (quizá el correo ya existe)');
-  return res;
+  return res.json();
 }
 
-export async function deleteUsuario(email) {
-  const res = await fetch(`${BASE_URL}/usuarios?email=eq.${encodeURIComponent(email)}`, {
+export async function updateUsuario(id, userData) {
+  const res = await fetch(`${BASE_URL}/usuarios?id=eq.${id}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    },
+    body: JSON.stringify(userData)
+  });
+  if (!res.ok) throw new Error('Error al actualizar usuario');
+  return res.json();
+}
+
+export async function deleteUsuario(id) {
+  const res = await fetch(`${BASE_URL}/usuarios?id=eq.${id}`, {
     method: 'DELETE'
   });
-  if (!res.ok) throw new Error('Error al eliminar');
+  if (!res.ok) throw new Error('Error al eliminar usuario');
   return res;
 }
