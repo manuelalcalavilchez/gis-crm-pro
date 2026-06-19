@@ -24,26 +24,28 @@ export const useStore = create(
 
       incrementLoginAttempts: () => {
         const attempts = get().loginAttempts + 1;
-        const locked = attempts >= 5 ? Date.now() + 60000 * 2 : null; // 2 min lock
+        const locked = attempts >= 5 ? Date.now() + 60000 * 2 : null;
         set({ loginAttempts: attempts, lockedUntil: locked });
       },
 
       resetLoginAttempts: () => set({ loginAttempts: 0, lockedUntil: null }),
 
-      // ── Tasaciones state ──
+      isAdmin: () => {
+        const user = get().user;
+        return user?.email === 'manuel@tecnologiaalcala.es' || user?.role === 'administrador';
+      },
+
+      // ── Informes state ──
       items: [],
       selected: null,
       filters: {},
+      resultCount: 0,
 
-      setItems: (items) => set({ items }),
+      setItems: (items) => set({ items, resultCount: items.length }),
       setSelected: (selected) => set({ selected }),
       setFilters: (filters) => set({ filters }),
       clearFilters: () => set({ filters: {} }),
-
-      // ── Import state ──
-      importData: [],
-      setImportData: (importData) => set({ importData }),
-      clearImportData: () => set({ importData: [] }),
+      setResultCount: (resultCount) => set({ resultCount }),
     }),
     {
       name: 'gis-crm-storage',

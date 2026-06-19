@@ -994,3 +994,52 @@ body, html, #root {
   font-style: italic;
 }
 .distance-filter-hint strong { color: var(--accent); font-style: normal; }
+
+
+
+/* ── Ficha Tabs ── */
+.ficha-tabs {
+  display: flex; gap: 0.25rem; margin-bottom: 1.5rem;
+  background: var(--bg-card); padding: 0.35rem;
+  border-radius: var(--radius-md); border: 1px solid var(--border-color);
+  overflow-x: auto;
+}
+
+.ficha-tab {
+  background: transparent; border: none; color: var(--text-muted);
+  padding: 0.6rem 1.25rem; border-radius: var(--radius-sm);
+  cursor: pointer; font-size: 0.82rem; font-weight: 500;
+  transition: var(--transition); white-space: nowrap;
+}
+.ficha-tab:hover { background: var(--bg-hover); color: var(--text-main); }
+.ficha-tab.active {
+  background: var(--accent); color: white; font-weight: 600;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+/* Status badges adicionales */
+.status-badge.status-active { background: var(--green-light); color: var(--green); }
+.status-dot-active { background: var(--green); }
+
+/* Search bar dentro del mapa header */
+.search-bar {
+  display: flex; align-items: center;
+}
+.search-bar .search-input-wrapper {
+  width: 280px;
+}
+.search-clear {
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; display: flex; padding: 0.2rem;
+}
+.search-clear:hover { color: var(--red); }
+
+/* Record field span (para ImportarJSON) */
+.record-field span {
+  font-size: 0.85rem; color: var(--text-main); font-weight: 500;
+}
+
+/* Ficha field highlight */
+.ficha-field.highlight .field-value {
+  color: var(--green); font-weight: 700; font-size: 1.05rem;
+}

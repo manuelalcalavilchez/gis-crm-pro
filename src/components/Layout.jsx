@@ -7,6 +7,8 @@ export default function Layout() {
   const { logout, user } = useStore();
   const navigate = useNavigate();
 
+  const isAdmin = user?.email === 'manuel@tecnologiaalcala.es' || user?.role === 'administrador';
+
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -16,10 +18,10 @@ export default function Layout() {
     <div className="app-layout">
       <aside className="nav-sidebar">
         <div className="nav-brand">
-          <div className="brand-logo">TA</div>
+          <div className="brand-logo">JMS</div>
           <div>
-            <h2>Tecnología Alcalá</h2>
-            <span>GIS CRM Pro</span>
+            <h2>Jorge Mart\u00ednez Sola</h2>
+            <span>by Tecnolog\u00eda Alcal\u00e1</span>
           </div>
         </div>
 
@@ -44,10 +46,12 @@ export default function Layout() {
             <span>Nueva Ficha</span>
           </NavLink>
 
-          <NavLink to="/usuarios" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
-            <Users size={20} />
-            <span>Usuarios</span>
-          </NavLink>
+          {isAdmin && (
+            <NavLink to="/usuarios" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
+              <Users size={20} />
+              <span>Usuarios</span>
+            </NavLink>
+          )}
         </nav>
 
         <div className="nav-footer">
@@ -60,14 +64,14 @@ export default function Layout() {
               <div className="nav-user-details">
                 <span className="nav-user-name">{user.email}</span>
                 <span className="nav-user-role">
-                  <Shield size={10} /> {user.role || 'usuario'}
+                  <Shield size={10} /> {user.role || 'tasador'}
                 </span>
               </div>
             </div>
           )}
           <button onClick={handleLogout} className="logout-btn">
             <LogOut size={18} />
-            <span>Cerrar Sesión</span>
+            <span>Cerrar Sesi\u00f3n</span>
           </button>
         </div>
       </aside>

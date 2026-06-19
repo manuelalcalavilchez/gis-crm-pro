@@ -1,33 +1,36 @@
-import { useState } from "react";
-import { Search } from "lucide-react";
+import { useState } from 'react';
+import { Search, X } from 'lucide-react';
 
-export default function SearchBar({ onSearch, loading }) {
-  const [q, setQ] = useState("");
+export default function SearchBar({ onSearch, loading, placeholder = 'Buscar por municipio, referencia, solicitante...' }) {
+  const [value, setValue] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSearch(q);
+    onSearch(value);
+  };
+
+  const handleClear = () => {
+    setValue('');
+    onSearch('');
   };
 
   return (
-    <form className="search-form" onSubmit={handleSubmit}>
+    <form className="search-bar" onSubmit={handleSubmit}>
       <div className="search-input-wrapper">
-        <Search size={16} />
+        <Search size={16} className={loading ? 'spinning' : ''} />
         <input
-          className="search-input"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Buscar por referencia, localidad, tasador..."
-          disabled={loading}
+          type="text"
+          value={value}
+          onChange={e => setValue(e.target.value)}
+          placeholder={placeholder}
+          className="search-input-inline"
         />
+        {value && (
+          <button type="button" className="search-clear" onClick={handleClear}>
+            <X size={14} />
+          </button>
+        )}
       </div>
-      <button
-        type="submit"
-        className="search-button"
-        disabled={loading}
-      >
-        {loading ? <div className="spinner-sm"></div> : 'Buscar'}
-      </button>
     </form>
   );
 }

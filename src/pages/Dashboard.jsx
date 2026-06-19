@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
 import { Filter, TrendingUp, MapPin, Euro, FileText, RefreshCw, Navigation } from 'lucide-react';
-import { searchTasaciones } from '../api/postgrest';
+import { useNavigate } from 'react-router-dom';
+import { searchInformes } from '../api/postgrest';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6', '#f97316', '#06b6d4'];
 
-// Haversine: distancia en km entre dos coordenadas
 function distanciaKm(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -16,39 +16,24 @@ function distanciaKm(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// Parsear coordenadas del campo lote "lat,lng"
-function parseCoords(lote) {
-  if (!lote) return null;
-  const parts = lote.split(',');
-  if (parts.length === 2) {
-    const lat = parseFloat(parts[0]);
-    const lng = parseFloat(parts[1]);
-    if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) return { lat, lng };
-  }
-  return null;
-}
-
 export default function Dashboard() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const navigate = useNavigate();
 
-  // Filtros
-  const [filtroTipo, setFiltroTipo] = useState('');
-  const [filtroLocalidad, setFiltroLocalidad] = useState('');
-  const [filtroEstado, setFiltroEstado] = useState('');
-  const [filtroPropietario, setFiltroPropietario] = useState('');
+  const [filtroClase, setFiltroClase] = useState('');
+  const [filtroMunicipio, setFiltroMunicipio] = useState('');
+  const [filtroProvincia, setFiltroProvincia] = useState('');
   const [filtroAnio, setFiltroAnio] = useState('');
   const [filtroValorMin, setFiltroValorMin] = useState('');
   const [filtroValorMax, setFiltroValorMax] = useState('');
-
-  // Filtro por distancia
   const [localidadBase, setLocalidadBase] = useState('');
   const [radioKm, setRadioKm] = useState('');
 
   const fetchData = async () => {
     try {
-      const res = await searchTasaciones('');
+      const res = await searchInformes('');
       setData(res);
     } catch (err) {
       console.error(err);
@@ -60,34 +45,25 @@ export default function Dashboard() {
 
   useEffect(() => { fetchData(); }, []);
 
-  const handleRefresh = () => {
-    setRefreshing(true);
-    fetchData();
-  };
+  const handleRefresh = () => { setRefreshing(true); fetchData(); };
 
-  // Opciones únicas para filtros
-  const opcionesTipos = useMemo(() => [...new Set(data.map(d => d.tipo).filter(Boolean))].sort(), [data]);
-  const opcionesLocalidades = useMemo(() => [...new Set(data.map(d => d.localidad).filter(Boolean))].sort(), [data]);
-  const opcionesEstados = useMemo(() => [...new Set(data.map(d => d.estado).filter(Boolean))].sort(), [data]);
-  const opcionesPropietarios = useMemo(() => [...new Set(data.map(d => d.propietario).filter(Boolean))].sort(), [data]);
+  const opcionesClases = useMemo(() => [...new Set(data.map(d => d.clase_general).filter(Boolean))].sort(), [data]);
+  const opcionesMunicipios = useMemo(() => [...new Set(data.map(d => d.municipio).filter(Boolean))].sort(), [data]);
+  const opcionesProvincias = useMemo(() => [...new Set(data.map(d => d.provincia).filter(Boolean))].sort(), [data]);
   const opcionesAnios = useMemo(() => {
-    const years = data.map(d => d.fecha ? String(new Date(d.fecha).getFullYear()) : null).filter(Boolean);
+    const years = data.map(d => d.fecha_emision ? String(new Date(d.fecha_emision).getFullYear()) : null).filter(Boolean);
     return [...new Set(years)].sort().reverse();
   }, [data]);
 
-  // Obtener coordenadas medias por localidad (para filtro por distancia)
-  const coordsPorLocalidad = useMemo(() => {
+  const coordsPorMunicipio = useMemo(() => {
     const map = {};
     data.forEach(item => {
-      if (!item.localidad) return;
-      const coords = parseCoords(item.lote);
-      if (!coords) return;
-      if (!map[item.localidad]) map[item.localidad] = { lat: 0, lng: 0, count: 0 };
-      map[item.localidad].lat += coords.lat;
-      map[item.localidad].lng += coords.lng;
-      map[item.localidad].count += 1;
+      if (!item.municipio || !item.latitud || !item.longitud) return;
+      if (!map[item.municipio]) map[item.municipio] = { lat: 0, lng: 0, count: 0 };
+      map[item.municipio].lat += Number(item.latitud);
+      map[item.municipio].lng += Number(item.longitud);
+      map[item.municipio].count += 1;
     });
-    // Promediar
     Object.keys(map).forEach(k => {
       map[k].lat /= map[k].count;
       map[k].lng /= map[k].count;
@@ -95,111 +71,69 @@ export default function Dashboard() {
     return map;
   }, [data]);
 
-  // Aplicar filtros + distancia
   const datosFiltrados = useMemo(() => {
     let filtered = data.filter(item => {
-      if (filtroTipo && item.tipo !== filtroTipo) return false;
-      if (filtroLocalidad && item.localidad !== filtroLocalidad) return false;
-      if (filtroEstado && item.estado !== filtroEstado) return false;
-      if (filtroPropietario && item.propietario !== filtroPropietario) return false;
+      if (filtroClase && item.clase_general !== filtroClase) return false;
+      if (filtroMunicipio && item.municipio !== filtroMunicipio) return false;
+      if (filtroProvincia && item.provincia !== filtroProvincia) return false;
       if (filtroAnio) {
-        const itemAnio = item.fecha ? String(new Date(item.fecha).getFullYear()) : '';
+        const itemAnio = item.fecha_emision ? String(new Date(item.fecha_emision).getFullYear()) : '';
         if (itemAnio !== filtroAnio) return false;
       }
-      if (filtroValorMin && Number(item.valor) < Number(filtroValorMin)) return false;
-      if (filtroValorMax && Number(item.valor) > Number(filtroValorMax)) return false;
+      if (filtroValorMin && Number(item.valor_mercado_adoptado || 0) < Number(filtroValorMin)) return false;
+      if (filtroValorMax && Number(item.valor_mercado_adoptado || 0) > Number(filtroValorMax)) return false;
       return true;
     });
 
-    // Filtrar por radio de distancia si hay localidad base seleccionada
-    if (localidadBase && radioKm && coordsPorLocalidad[localidadBase]) {
-      const base = coordsPorLocalidad[localidadBase];
+    if (localidadBase && coordsPorMunicipio[localidadBase]) {
+      const base = coordsPorMunicipio[localidadBase];
       filtered = filtered.filter(item => {
-        const coords = parseCoords(item.lote);
-        if (!coords) return false;
-        const dist = distanciaKm(base.lat, base.lng, coords.lat, coords.lng);
-        return dist <= Number(radioKm);
-      });
-    }
-
-    // Ordenar por distancia si hay localidad base seleccionada (sin radio o con radio)
-    if (localidadBase && coordsPorLocalidad[localidadBase]) {
-      const base = coordsPorLocalidad[localidadBase];
-      filtered = filtered.map(item => {
-        const coords = parseCoords(item.lote);
-        const dist = coords ? distanciaKm(base.lat, base.lng, coords.lat, coords.lng) : 99999;
+        if (!item.latitud || !item.longitud) return false;
+        if (radioKm) {
+          const dist = distanciaKm(base.lat, base.lng, Number(item.latitud), Number(item.longitud));
+          return dist <= Number(radioKm);
+        }
+        return true;
+      }).map(item => {
+        const dist = distanciaKm(base.lat, base.lng, Number(item.latitud), Number(item.longitud));
         return { ...item, _distancia: dist };
-      }).sort((a, b) => a._distancia - b._distancia);
+      }).sort((a, b) => (a._distancia || 0) - (b._distancia || 0));
     }
 
     return filtered;
-  }, [data, filtroTipo, filtroLocalidad, filtroEstado, filtroPropietario, filtroAnio, filtroValorMin, filtroValorMax, localidadBase, radioKm, coordsPorLocalidad]);
+  }, [data, filtroClase, filtroMunicipio, filtroProvincia, filtroAnio, filtroValorMin, filtroValorMax, localidadBase, radioKm, coordsPorMunicipio]);
 
   const limpiarFiltros = () => {
-    setFiltroTipo('');
-    setFiltroLocalidad('');
-    setFiltroEstado('');
-    setFiltroPropietario('');
-    setFiltroAnio('');
-    setFiltroValorMin('');
-    setFiltroValorMax('');
-    setLocalidadBase('');
-    setRadioKm('');
+    setFiltroClase(''); setFiltroMunicipio(''); setFiltroProvincia('');
+    setFiltroAnio(''); setFiltroValorMin(''); setFiltroValorMax('');
+    setLocalidadBase(''); setRadioKm('');
   };
 
-  const hayFiltros = filtroTipo || filtroLocalidad || filtroEstado || filtroPropietario || filtroAnio || filtroValorMin || filtroValorMax || localidadBase;
+  const hayFiltros = filtroClase || filtroMunicipio || filtroProvincia || filtroAnio || filtroValorMin || filtroValorMax || localidadBase;
 
   if (loading) {
-    return (
-      <div className="loading-state">
-        <div className="spinner"></div>
-        <p>Cargando métricas...</p>
-      </div>
-    );
+    return <div className="loading-state"><div className="spinner"></div><p>Cargando m\u00e9tricas...</p></div>;
   }
 
-  // KPIs
-  const totalTasaciones = datosFiltrados.length;
-  const totalValor = datosFiltrados.reduce((acc, curr) => acc + (Number(curr.valor) || 0), 0);
-  const avgValor = totalTasaciones ? (totalValor / totalTasaciones) : 0;
-  const totalSuperficie = datosFiltrados.reduce((acc, curr) => acc + (Number(curr.superficie) || 0), 0);
-  const avgSuperficie = totalTasaciones ? (totalSuperficie / totalTasaciones) : 0;
+  const totalInformes = datosFiltrados.length;
+  const totalValor = datosFiltrados.reduce((acc, curr) => acc + (Number(curr.valor_mercado_adoptado) || 0), 0);
+  const avgValor = totalInformes ? (totalValor / totalInformes) : 0;
+  const conCoordenadas = datosFiltrados.filter(d => d.latitud && d.longitud).length;
 
-  // Gráfico por Tipo
-  const tiposCount = datosFiltrados.reduce((acc, curr) => {
-    const k = curr.tipo || 'Sin tipo';
-    acc[k] = (acc[k] || 0) + 1;
-    return acc;
-  }, {});
-  const dataTipos = Object.entries(tiposCount).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+  // Datos para gr\u00e1ficos
+  const clasesCount = datosFiltrados.reduce((acc, curr) => { const k = curr.clase_general || 'Sin clase'; acc[k] = (acc[k] || 0) + 1; return acc; }, {});
+  const dataClases = Object.entries(clasesCount).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
 
-  // Gráfico por Localidad (Top 10)
-  const localidadesCount = datosFiltrados.reduce((acc, curr) => {
-    const k = curr.localidad || 'Sin localidad';
-    acc[k] = (acc[k] || 0) + 1;
-    return acc;
-  }, {});
-  const dataLocalidades = Object.entries(localidadesCount)
-    .map(([name, cantidad]) => ({ name, cantidad }))
-    .sort((a, b) => b.cantidad - a.cantidad)
-    .slice(0, 10);
+  const municipiosCount = datosFiltrados.reduce((acc, curr) => { const k = curr.municipio || 'Sin municipio'; acc[k] = (acc[k] || 0) + 1; return acc; }, {});
+  const dataMunicipios = Object.entries(municipiosCount).map(([name, cantidad]) => ({ name, cantidad })).sort((a, b) => b.cantidad - a.cantidad).slice(0, 10);
 
-  // Gráfico por Estado
-  const estadosCount = datosFiltrados.reduce((acc, curr) => {
-    const k = curr.estado || 'Sin estado';
-    acc[k] = (acc[k] || 0) + 1;
-    return acc;
-  }, {});
-  const dataEstados = Object.entries(estadosCount).map(([name, value]) => ({ name, value }));
-
-  // Evolución temporal (por mes)
   const evolucionMensual = datosFiltrados.reduce((acc, curr) => {
-    if (!curr.fecha) return acc;
-    const d = new Date(curr.fecha);
+    if (!curr.fecha_emision && !curr.fecha_creacion_registro) return acc;
+    const d = new Date(curr.fecha_emision || curr.fecha_creacion_registro);
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     if (!acc[key]) acc[key] = { mes: key, cantidad: 0, valorTotal: 0 };
     acc[key].cantidad += 1;
-    acc[key].valorTotal += Number(curr.valor) || 0;
+    acc[key].valorTotal += Number(curr.valor_mercado_adoptado) || 0;
     return acc;
   }, {});
   const dataEvolucion = Object.values(evolucionMensual).sort((a, b) => a.mes.localeCompare(b.mes));
@@ -208,108 +142,80 @@ export default function Dashboard() {
     <div className="page-container dashboard-page">
       <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h2>Dashboard Analítico</h2>
+          <h2>Dashboard Anal\u00edtico</h2>
           <p className="text-muted">
-            Resumen interactivo de tasaciones
-            {hayFiltros && <span className="filter-badge">{datosFiltrados.length} de {data.length} registros</span>}
+            Resumen interactivo de informes de tasaci\u00f3n
+            {hayFiltros && <span className="filter-badge">{datosFiltrados.length} de {data.length} informes</span>}
           </p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <button className="btn-icon" onClick={handleRefresh} disabled={refreshing} title="Actualizar datos">
-            <RefreshCw size={18} className={refreshing ? 'spinning' : ''} />
-          </button>
-        </div>
+        <button className="btn-icon" onClick={handleRefresh} disabled={refreshing} title="Actualizar datos">
+          <RefreshCw size={18} className={refreshing ? 'spinning' : ''} />
+        </button>
       </header>
 
-      {/* Panel de Filtros */}
+      {/* Filtros */}
       <div className="card filter-panel">
         <div className="filter-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Filter size={18} />
             <h3>Filtros</h3>
+            {hayFiltros && <span className="filter-badge">{datosFiltrados.length} resultados</span>}
           </div>
-          {hayFiltros && (
-            <button className="btn-link" onClick={limpiarFiltros}>Limpiar filtros</button>
-          )}
+          {hayFiltros && <button className="btn-link" onClick={limpiarFiltros}>Limpiar filtros</button>}
         </div>
         <div className="form-grid form-grid-4">
           <div className="form-group">
-            <label>Tipo</label>
-            <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)}>
-              <option value="">Todos</option>
-              {opcionesTipos.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Localidad</label>
-            <select value={filtroLocalidad} onChange={e => setFiltroLocalidad(e.target.value)}>
+            <label>Clase Inmueble</label>
+            <select value={filtroClase} onChange={e => setFiltroClase(e.target.value)}>
               <option value="">Todas</option>
-              {opcionesLocalidades.map(l => <option key={l} value={l}>{l}</option>)}
+              {opcionesClases.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
           <div className="form-group">
-            <label>Estado</label>
-            <select value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)}>
+            <label>Municipio</label>
+            <select value={filtroMunicipio} onChange={e => setFiltroMunicipio(e.target.value)}>
               <option value="">Todos</option>
-              {opcionesEstados.map(e => <option key={e} value={e}>{e}</option>)}
+              {opcionesMunicipios.map(l => <option key={l} value={l}>{l}</option>)}
             </select>
           </div>
           <div className="form-group">
-            <label>Tasador</label>
-            <select value={filtroPropietario} onChange={e => setFiltroPropietario(e.target.value)}>
-              <option value="">Todos</option>
-              {opcionesPropietarios.map(p => <option key={p} value={p}>{p}</option>)}
+            <label>Provincia</label>
+            <select value={filtroProvincia} onChange={e => setFiltroProvincia(e.target.value)}>
+              <option value="">Todas</option>
+              {opcionesProvincias.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
           </div>
           <div className="form-group">
-            <label>Año</label>
+            <label>A\u00f1o</label>
             <select value={filtroAnio} onChange={e => setFiltroAnio(e.target.value)}>
               <option value="">Todos</option>
               {opcionesAnios.map(a => <option key={a} value={a}>{a}</option>)}
             </select>
           </div>
           <div className="form-group">
-            <label>Valor mín. (€)</label>
+            <label>Valor m\u00edn. (\u20ac)</label>
             <input type="number" min="0" value={filtroValorMin} onChange={e => setFiltroValorMin(e.target.value)} placeholder="0" />
           </div>
           <div className="form-group">
-            <label>Valor máx. (€)</label>
-            <input type="number" min="0" value={filtroValorMax} onChange={e => setFiltroValorMax(e.target.value)} placeholder="Sin límite" />
+            <label>Valor m\u00e1x. (\u20ac)</label>
+            <input type="number" min="0" value={filtroValorMax} onChange={e => setFiltroValorMax(e.target.value)} placeholder="Sin l\u00edmite" />
           </div>
         </div>
-
-        {/* Filtro por distancia */}
         <div className="distance-filter-section">
-          <div className="distance-filter-label">
-            <Navigation size={14} />
-            <span>Ordenar por distancia a localidad</span>
-          </div>
+          <div className="distance-filter-label"><Navigation size={14} /><span>Ordenar por distancia</span></div>
           <div className="form-grid form-grid-4" style={{ marginTop: '0.75rem' }}>
             <div className="form-group">
-              <label>Localidad base</label>
+              <label>Municipio base</label>
               <select value={localidadBase} onChange={e => setLocalidadBase(e.target.value)}>
-                <option value="">Sin ordenar por distancia</option>
-                {opcionesLocalidades.map(l => <option key={l} value={l}>{l}</option>)}
+                <option value="">Sin ordenar</option>
+                {opcionesMunicipios.map(l => <option key={l} value={l}>{l}</option>)}
               </select>
             </div>
             <div className="form-group">
-              <label>Radio máx. (km)</label>
-              <input
-                type="number"
-                min="0"
-                value={radioKm}
-                onChange={e => setRadioKm(e.target.value)}
-                placeholder="Sin límite"
-                disabled={!localidadBase}
-              />
+              <label>Radio m\u00e1x. (km)</label>
+              <input type="number" min="0" value={radioKm} onChange={e => setRadioKm(e.target.value)} placeholder="Sin l\u00edmite" disabled={!localidadBase} />
             </div>
           </div>
-          {localidadBase && (
-            <p className="distance-filter-hint">
-              Resultados ordenados de más cercano a más lejano desde <strong>{localidadBase}</strong>
-              {radioKm ? ` (máx. ${radioKm} km)` : ''}
-            </p>
-          )}
         </div>
       </div>
 
@@ -318,8 +224,8 @@ export default function Dashboard() {
         <div className="kpi-card">
           <div className="kpi-icon"><FileText size={24} /></div>
           <div className="kpi-content">
-            <span className="kpi-label">Total Tasaciones</span>
-            <span className="kpi-value">{totalTasaciones.toLocaleString('es-ES')}</span>
+            <span className="kpi-label">Total Informes</span>
+            <span className="kpi-value">{totalInformes.toLocaleString('es-ES')}</span>
           </div>
         </div>
         <div className="kpi-card">
@@ -339,45 +245,33 @@ export default function Dashboard() {
         <div className="kpi-card">
           <div className="kpi-icon kpi-icon-orange"><MapPin size={24} /></div>
           <div className="kpi-content">
-            <span className="kpi-label">Sup. Media</span>
-            <span className="kpi-value">{avgSuperficie.toLocaleString('es-ES', { maximumFractionDigits: 0 })} m²</span>
+            <span className="kpi-label">Con coordenadas</span>
+            <span className="kpi-value">{conCoordenadas}</span>
           </div>
         </div>
       </div>
 
-      {/* Tabla de resultados ordenada por distancia (si hay localidad base) */}
+      {/* Tabla resultados por distancia */}
       {localidadBase && (
         <div className="card" style={{ marginBottom: '2rem', overflow: 'hidden' }}>
           <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border-color)' }}>
             <h3 style={{ margin: 0, fontSize: '0.95rem' }}>
               <Navigation size={14} style={{ marginRight: '0.4rem', display: 'inline' }} />
-              Fichas por distancia a {localidadBase} ({datosFiltrados.length})
+              Informes por distancia a {localidadBase} ({datosFiltrados.length})
             </h3>
           </div>
           <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
             <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Dist.</th>
-                  <th>Referencia</th>
-                  <th>Localidad</th>
-                  <th>Tasador</th>
-                  <th style={{ textAlign: 'right' }}>Valor</th>
-                </tr>
-              </thead>
+              <thead><tr><th>Dist.</th><th>N\u00ba Informe</th><th>Municipio</th><th>Solicitante</th><th style={{ textAlign: 'right' }}>Valor</th></tr></thead>
               <tbody>
                 {datosFiltrados.slice(0, 50).map(item => (
-                  <tr key={item.id}>
-                    <td>
-                      <span className="badge badge-accent">
-                        {item._distancia !== undefined ? `${item._distancia.toFixed(1)} km` : '—'}
-                      </span>
-                    </td>
-                    <td style={{ fontWeight: 600, fontSize: '0.82rem' }}>{item.referencia}</td>
-                    <td style={{ fontSize: '0.82rem' }}>{item.localidad}</td>
-                    <td style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{item.propietario}</td>
+                  <tr key={item.id} onClick={() => navigate(`/ficha/${item.id}`)} style={{ cursor: 'pointer' }}>
+                    <td><span className="badge badge-accent">{item._distancia !== undefined ? `${item._distancia.toFixed(1)} km` : '\u2014'}</span></td>
+                    <td style={{ fontWeight: 600, fontSize: '0.82rem' }}>{item.numero_informe || `INF-${item.id}`}</td>
+                    <td style={{ fontSize: '0.82rem' }}>{item.municipio}</td>
+                    <td style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{item.solicitante_nombre || '\u2014'}</td>
                     <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--green)', fontSize: '0.82rem' }}>
-                      {Number(item.valor).toLocaleString('es-ES')} €
+                      {Number(item.valor_mercado_adoptado || 0).toLocaleString('es-ES')} \u20ac
                     </td>
                   </tr>
                 ))}
@@ -387,11 +281,10 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Gráficos */}
+      {/* Gr\u00e1ficos */}
       <div className="charts-grid">
-        {/* Evolución temporal */}
         <div className="chart-card chart-card-wide">
-          <h3>Evolución Temporal</h3>
+          <h3>Evoluci\u00f3n Temporal</h3>
           <div className="chart-wrapper">
             <ResponsiveContainer width="100%" height={280}>
               <LineChart data={dataEvolucion} margin={{ top: 10, right: 30, left: 0, bottom: 5 }}>
@@ -401,19 +294,18 @@ export default function Dashboard() {
                 <YAxis yAxisId="right" orientation="right" stroke="var(--text-muted)" tick={{ fontSize: 11 }} />
                 <Tooltip contentStyle={{ backgroundColor: 'var(--bg-panel)', borderColor: 'var(--border-color)', borderRadius: '8px' }} />
                 <Legend />
-                <Line yAxisId="left" type="monotone" dataKey="cantidad" name="Fichas" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
-                <Line yAxisId="right" type="monotone" dataKey="valorTotal" name="Valor (€)" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
+                <Line yAxisId="left" type="monotone" dataKey="cantidad" name="Informes" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
+                <Line yAxisId="right" type="monotone" dataKey="valorTotal" name="Valor (\u20ac)" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Top Localidades */}
         <div className="chart-card">
-          <h3>Top Localidades</h3>
+          <h3>Top Municipios</h3>
           <div className="chart-wrapper">
             <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={dataLocalidades} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+              <BarChart data={dataMunicipios} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
                 <XAxis dataKey="name" stroke="var(--text-muted)" tick={{ fontSize: 10 }} angle={-20} textAnchor="end" height={60} />
                 <YAxis stroke="var(--text-muted)" tick={{ fontSize: 11 }} />
@@ -424,50 +316,14 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Distribución por Tipo */}
         <div className="chart-card">
-          <h3>Distribución por Tipo</h3>
+          <h3>Distribuci\u00f3n por Clase</h3>
           <div className="chart-wrapper">
             <ResponsiveContainer width="100%" height={280}>
               <PieChart>
-                <Pie
-                  data={dataTipos}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={90}
-                  paddingAngle={4}
-                  dataKey="value"
-                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                  labelLine={false}
-                >
-                  {dataTipos.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={{ backgroundColor: 'var(--bg-panel)', borderColor: 'var(--border-color)', borderRadius: '8px' }} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Estado */}
-        <div className="chart-card">
-          <h3>Por Estado</h3>
-          <div className="chart-wrapper">
-            <ResponsiveContainer width="100%" height={280}>
-              <PieChart>
-                <Pie
-                  data={dataEstados}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={90}
-                  dataKey="value"
-                  label={({ name, value }) => `${name}: ${value}`}
-                >
-                  {dataEstados.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[(index + 3) % COLORS.length]} />
-                  ))}
+                <Pie data={dataClases} cx="50%" cy="50%" innerRadius={50} outerRadius={90} paddingAngle={4} dataKey="value"
+                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`} labelLine={false}>
+                  {dataClases.map((_, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
                 </Pie>
                 <Tooltip contentStyle={{ backgroundColor: 'var(--bg-panel)', borderColor: 'var(--border-color)', borderRadius: '8px' }} />
               </PieChart>
