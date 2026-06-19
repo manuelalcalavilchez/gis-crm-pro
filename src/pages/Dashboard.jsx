@@ -1,9 +1,32 @@
 import { useState, useEffect, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
-import { Filter, TrendingUp, MapPin, Euro, FileText, RefreshCw } from 'lucide-react';
+import { Filter, TrendingUp, MapPin, Euro, FileText, RefreshCw, Navigation } from 'lucide-react';
 import { searchTasaciones } from '../api/postgrest';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6', '#f97316', '#06b6d4'];
+
+// Haversine: distancia en km entre dos coordenadas
+function distanciaKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Parsear coordenadas del campo lote "lat,lng"
+function parseCoords(lote) {
+  if (!lote) return null;
+  const parts = lote.split(',');
+  if (parts.length === 2) {
+    const lat = parseFloat(parts[0]);
+    const lng = parseFloat(parts[1]);
+    if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) return { lat, lng };
+  }
+  return null;
+}
 
 export default function Dashboard() {
   const [data, setData] = useState([]);
@@ -18,6 +41,10 @@ export default function Dashboard() {
   const [filtroAnio, setFiltroAnio] = useState('');
   const [filtroValorMin, setFiltroValorMin] = useState('');
   const [filtroValorMax, setFiltroValorMax] = useState('');
+
+  // Filtro por distancia
+  const [localidadBase, setLocalidadBase] = useState('');
+  const [radioKm, setRadioKm] = useState('');
 
   const fetchData = async () => {
     try {
@@ -48,9 +75,29 @@ export default function Dashboard() {
     return [...new Set(years)].sort().reverse();
   }, [data]);
 
-  // Aplicar filtros
+  // Obtener coordenadas medias por localidad (para filtro por distancia)
+  const coordsPorLocalidad = useMemo(() => {
+    const map = {};
+    data.forEach(item => {
+      if (!item.localidad) return;
+      const coords = parseCoords(item.lote);
+      if (!coords) return;
+      if (!map[item.localidad]) map[item.localidad] = { lat: 0, lng: 0, count: 0 };
+      map[item.localidad].lat += coords.lat;
+      map[item.localidad].lng += coords.lng;
+      map[item.localidad].count += 1;
+    });
+    // Promediar
+    Object.keys(map).forEach(k => {
+      map[k].lat /= map[k].count;
+      map[k].lng /= map[k].count;
+    });
+    return map;
+  }, [data]);
+
+  // Aplicar filtros + distancia
   const datosFiltrados = useMemo(() => {
-    return data.filter(item => {
+    let filtered = data.filter(item => {
       if (filtroTipo && item.tipo !== filtroTipo) return false;
       if (filtroLocalidad && item.localidad !== filtroLocalidad) return false;
       if (filtroEstado && item.estado !== filtroEstado) return false;
@@ -63,7 +110,30 @@ export default function Dashboard() {
       if (filtroValorMax && Number(item.valor) > Number(filtroValorMax)) return false;
       return true;
     });
-  }, [data, filtroTipo, filtroLocalidad, filtroEstado, filtroPropietario, filtroAnio, filtroValorMin, filtroValorMax]);
+
+    // Filtrar por radio de distancia si hay localidad base seleccionada
+    if (localidadBase && radioKm && coordsPorLocalidad[localidadBase]) {
+      const base = coordsPorLocalidad[localidadBase];
+      filtered = filtered.filter(item => {
+        const coords = parseCoords(item.lote);
+        if (!coords) return false;
+        const dist = distanciaKm(base.lat, base.lng, coords.lat, coords.lng);
+        return dist <= Number(radioKm);
+      });
+    }
+
+    // Ordenar por distancia si hay localidad base seleccionada (sin radio o con radio)
+    if (localidadBase && coordsPorLocalidad[localidadBase]) {
+      const base = coordsPorLocalidad[localidadBase];
+      filtered = filtered.map(item => {
+        const coords = parseCoords(item.lote);
+        const dist = coords ? distanciaKm(base.lat, base.lng, coords.lat, coords.lng) : 99999;
+        return { ...item, _distancia: dist };
+      }).sort((a, b) => a._distancia - b._distancia);
+    }
+
+    return filtered;
+  }, [data, filtroTipo, filtroLocalidad, filtroEstado, filtroPropietario, filtroAnio, filtroValorMin, filtroValorMax, localidadBase, radioKm, coordsPorLocalidad]);
 
   const limpiarFiltros = () => {
     setFiltroTipo('');
@@ -73,9 +143,11 @@ export default function Dashboard() {
     setFiltroAnio('');
     setFiltroValorMin('');
     setFiltroValorMax('');
+    setLocalidadBase('');
+    setRadioKm('');
   };
 
-  const hayFiltros = filtroTipo || filtroLocalidad || filtroEstado || filtroPropietario || filtroAnio || filtroValorMin || filtroValorMax;
+  const hayFiltros = filtroTipo || filtroLocalidad || filtroEstado || filtroPropietario || filtroAnio || filtroValorMin || filtroValorMax || localidadBase;
 
   if (loading) {
     return (
@@ -131,19 +203,6 @@ export default function Dashboard() {
     return acc;
   }, {});
   const dataEvolucion = Object.values(evolucionMensual).sort((a, b) => a.mes.localeCompare(b.mes));
-
-  // Valor por propietario (Top 8)
-  const propietariosValor = datosFiltrados.reduce((acc, curr) => {
-    const k = curr.propietario || 'Sin tasador';
-    if (!acc[k]) acc[k] = { nombre: k, valor: 0, count: 0 };
-    acc[k].valor += Number(curr.valor) || 0;
-    acc[k].count += 1;
-    return acc;
-  }, {});
-  const dataPropietarios = Object.values(propietariosValor)
-    .sort((a, b) => b.valor - a.valor)
-    .slice(0, 8)
-    .map(p => ({ name: p.nombre, valor: Math.round(p.valor), fichas: p.count }));
 
   return (
     <div className="page-container dashboard-page">
@@ -218,6 +277,40 @@ export default function Dashboard() {
             <input type="number" min="0" value={filtroValorMax} onChange={e => setFiltroValorMax(e.target.value)} placeholder="Sin límite" />
           </div>
         </div>
+
+        {/* Filtro por distancia */}
+        <div className="distance-filter-section">
+          <div className="distance-filter-label">
+            <Navigation size={14} />
+            <span>Ordenar por distancia a localidad</span>
+          </div>
+          <div className="form-grid form-grid-4" style={{ marginTop: '0.75rem' }}>
+            <div className="form-group">
+              <label>Localidad base</label>
+              <select value={localidadBase} onChange={e => setLocalidadBase(e.target.value)}>
+                <option value="">Sin ordenar por distancia</option>
+                {opcionesLocalidades.map(l => <option key={l} value={l}>{l}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Radio máx. (km)</label>
+              <input
+                type="number"
+                min="0"
+                value={radioKm}
+                onChange={e => setRadioKm(e.target.value)}
+                placeholder="Sin límite"
+                disabled={!localidadBase}
+              />
+            </div>
+          </div>
+          {localidadBase && (
+            <p className="distance-filter-hint">
+              Resultados ordenados de más cercano a más lejano desde <strong>{localidadBase}</strong>
+              {radioKm ? ` (máx. ${radioKm} km)` : ''}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* KPIs */}
@@ -251,6 +344,48 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Tabla de resultados ordenada por distancia (si hay localidad base) */}
+      {localidadBase && (
+        <div className="card" style={{ marginBottom: '2rem', overflow: 'hidden' }}>
+          <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border-color)' }}>
+            <h3 style={{ margin: 0, fontSize: '0.95rem' }}>
+              <Navigation size={14} style={{ marginRight: '0.4rem', display: 'inline' }} />
+              Fichas por distancia a {localidadBase} ({datosFiltrados.length})
+            </h3>
+          </div>
+          <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Dist.</th>
+                  <th>Referencia</th>
+                  <th>Localidad</th>
+                  <th>Tasador</th>
+                  <th style={{ textAlign: 'right' }}>Valor</th>
+                </tr>
+              </thead>
+              <tbody>
+                {datosFiltrados.slice(0, 50).map(item => (
+                  <tr key={item.id}>
+                    <td>
+                      <span className="badge badge-accent">
+                        {item._distancia !== undefined ? `${item._distancia.toFixed(1)} km` : '—'}
+                      </span>
+                    </td>
+                    <td style={{ fontWeight: 600, fontSize: '0.82rem' }}>{item.referencia}</td>
+                    <td style={{ fontSize: '0.82rem' }}>{item.localidad}</td>
+                    <td style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{item.propietario}</td>
+                    <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--green)', fontSize: '0.82rem' }}>
+                      {Number(item.valor).toLocaleString('es-ES')} €
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Gráficos */}
       <div className="charts-grid">
@@ -336,25 +471,6 @@ export default function Dashboard() {
                 </Pie>
                 <Tooltip contentStyle={{ backgroundColor: 'var(--bg-panel)', borderColor: 'var(--border-color)', borderRadius: '8px' }} />
               </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Valor por Propietario */}
-        <div className="chart-card chart-card-wide">
-          <h3>Top Tasadores por Valor</h3>
-          <div className="chart-wrapper">
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={dataPropietarios} layout="vertical" margin={{ top: 10, right: 30, left: 100, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
-                <XAxis type="number" stroke="var(--text-muted)" tick={{ fontSize: 11 }} />
-                <YAxis type="category" dataKey="name" stroke="var(--text-muted)" tick={{ fontSize: 11 }} width={90} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: 'var(--bg-panel)', borderColor: 'var(--border-color)', borderRadius: '8px' }}
-                  formatter={(value) => `${Number(value).toLocaleString('es-ES')} €`}
-                />
-                <Bar dataKey="valor" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
-              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>

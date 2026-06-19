@@ -978,3 +978,19 @@ body, html, #root {
 .sidebar-actions .btn-primary { flex: 1; }
 .sidebar-actions .btn-secondary,
 .sidebar-actions .btn-danger { padding: 0.7rem 0.85rem; }
+
+
+/* ── Distance Filter ── */
+.distance-filter-section {
+  margin-top: 1.25rem; padding-top: 1.25rem;
+  border-top: 1px solid var(--border-color);
+}
+.distance-filter-label {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.82rem; font-weight: 600; color: var(--accent);
+}
+.distance-filter-hint {
+  margin: 0.75rem 0 0; font-size: 0.78rem; color: var(--text-muted);
+  font-style: italic;
+}
+.distance-filter-hint strong { color: var(--accent); font-style: normal; }
