@@ -8,6 +8,22 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'https://n8n-postgrest-api.n9xp
 
 export { BASE_URL };
 
+/**
+ * Parsea un valor monetario en formato español (136.500,00 €) o anglosajón (136500.00)
+ * Devuelve number o null
+ */
+function parseValorEspanol(s) {
+  if (!s) return null;
+  let clean = String(s).replace(/[^\d.,\-]/g, '');
+  if (!clean) return null;
+  // Si tiene coma → formato español (punto=miles, coma=decimal)
+  if (clean.includes(',')) {
+    clean = clean.replace(/\./g, '').replace(',', '.');
+  }
+  const n = parseFloat(clean);
+  return isNaN(n) ? null : n;
+}
+
 // ══════════════════════════════════════════════════════════
 // HEALTH CHECK
 // ══════════════════════════════════════════════════════════
@@ -162,9 +178,9 @@ export async function importarInformeCompleto(jsonData) {
     tasador_id,
     fecha_visita: jsonData.identificacion_informe?.tasador?.fecha_visita || null,
     fecha_validez: jsonData.identificacion_informe?.tasador?.fecha_validez || null,
-    sociedad_nombre: jsonData.identificacion_informe?.sociedad_tasacion?.nombre || 'Valoraciones Mediterr\u00e1neo, S.A.',
-    sociedad_registro_b_e: jsonData.identificacion_informe?.sociedad_tasacion?.registro_banco_espana || '4350',
-    sociedad_cif: jsonData.identificacion_informe?.sociedad_tasacion?.cif || 'A-03319530',
+    sociedad_nombre: jsonData.identificacion_informe?.sociedad_tasacion?.nombre || null,
+    sociedad_registro_b_e: jsonData.identificacion_informe?.sociedad_tasacion?.registro_banco_espana || null,
+    sociedad_cif: jsonData.identificacion_informe?.sociedad_tasacion?.cif || null,
     domicilio_social: jsonData.identificacion_informe?.sociedad_tasacion?.domicilio_social || null,
     solicitante_nombre: jsonData.solicitante_y_finalidad?.solicitante?.nombre || null,
     solicitante_dni: jsonData.solicitante_y_finalidad?.solicitante?.dni || null,
@@ -172,9 +188,9 @@ export async function importarInformeCompleto(jsonData) {
     solicitante_cp: jsonData.solicitante_y_finalidad?.solicitante?.cp || null,
     solicitante_municipio: jsonData.solicitante_y_finalidad?.solicitante?.municipio || null,
     solicitante_provincia: jsonData.solicitante_y_finalidad?.solicitante?.provincia || null,
-    solicitante_pais: jsonData.solicitante_y_finalidad?.solicitante?.pais || 'Espa\u00f1a',
+    solicitante_pais: jsonData.solicitante_y_finalidad?.solicitante?.pais || null,
     entidad_mandataria: jsonData.solicitante_y_finalidad?.entidad_mandataria || null,
-    finalidad: jsonData.solicitante_y_finalidad?.finalidad || 'Asesoramiento - Valor de mercado',
+    finalidad: jsonData.solicitante_y_finalidad?.finalidad || null,
     observaciones_generales: jsonData.solicitante_y_finalidad?.observaciones || null,
     municipio: jsonData.identificacion_y_localizacion?.municipio || null,
     provincia: jsonData.identificacion_y_localizacion?.provincia || null,
@@ -219,24 +235,24 @@ export async function importarInformeCompleto(jsonData) {
     produccion_ultimos_3_anos: jsonData.descripcion_y_superficies?.produccion?.produccion_ultimos_3_anios || null,
     cultivos_recomendados: jsonData.descripcion_y_superficies?.produccion?.cultivos_recomendados || null,
     valor_comparacion_superficie: parseFloat(jsonData.valores_tasacion?.valor_comparacion?.superficie) || null,
-    valor_comparacion_unitario: parseFloat(String(jsonData.valores_tasacion?.valor_comparacion?.valor_unitario || '').replace(/[^\d.,]/g, '').replace(',', '.')) || null,
-    valor_comparacion_total: parseFloat(String(jsonData.valores_tasacion?.valor_comparacion?.valor_total || '').replace(/[^\d.,]/g, '').replace(',', '.')) || null,
+    valor_comparacion_unitario: parseValorEspanol(jsonData.valores_tasacion?.valor_comparacion?.valor_unitario),
+    valor_comparacion_total: parseValorEspanol(jsonData.valores_tasacion?.valor_comparacion?.valor_total),
     valor_comparacion_detalles: (jsonData.valores_tasacion?.valor_comparacion?.detalles || []).join(' '),
-    valor_coste_reposicion: parseFloat(String(jsonData.valores_tasacion?.valor_coste?.coste_reposicion || '').replace(/[^\d.,]/g, '').replace(',', '.')) || null,
-    valor_coste_depreciacion: parseFloat(String(jsonData.valores_tasacion?.valor_coste?.depreciacion || '').replace(/[^\d.,]/g, '').replace(',', '.')) || null,
-    valor_coste_final: parseFloat(String(jsonData.valores_tasacion?.valor_coste?.valor_final || '').replace(/[^\d.,]/g, '').replace(',', '.')) || null,
+    valor_coste_reposicion: parseValorEspanol(jsonData.valores_tasacion?.valor_coste?.coste_reposicion),
+    valor_coste_depreciacion: parseValorEspanol(jsonData.valores_tasacion?.valor_coste?.depreciacion),
+    valor_coste_final: parseValorEspanol(jsonData.valores_tasacion?.valor_coste?.valor_final),
     valor_coste_detalles: (jsonData.valores_tasacion?.valor_coste?.detalles || []).join(' '),
     renta_anual: jsonData.valores_tasacion?.valor_actualizacion_rentas?.renta_anual || null,
     tasa_actualizacion: jsonData.valores_tasacion?.valor_actualizacion_rentas?.tasa_actualizacion || null,
-    valor_actualizacion_rentas: parseFloat(String(jsonData.valores_tasacion?.valor_actualizacion_rentas?.valor_actualizado || '').replace(/[^\d.,]/g, '').replace(',', '.')) || null,
+    valor_actualizacion_rentas: parseValorEspanol(jsonData.valores_tasacion?.valor_actualizacion_rentas?.valor_actualizado),
     valor_actualizacion_detalles: (jsonData.valores_tasacion?.valor_actualizacion_rentas?.detalles || []).join(' '),
-    valor_residual_estatico: parseFloat(String(jsonData.valores_tasacion?.valor_residual?.residual_estatico || '').replace(/[^\d.,]/g, '').replace(',', '.')) || null,
-    valor_residual_dinamico: parseFloat(String(jsonData.valores_tasacion?.valor_residual?.residual_dinamico || '').replace(/[^\d.,]/g, '').replace(',', '.')) || null,
+    valor_residual_estatico: parseValorEspanol(jsonData.valores_tasacion?.valor_residual?.residual_estatico),
+    valor_residual_dinamico: parseValorEspanol(jsonData.valores_tasacion?.valor_residual?.residual_dinamico),
     valor_residual_detalles: (jsonData.valores_tasacion?.valor_residual?.detalles || []).join(' '),
     mejoras_deducciones: jsonData.valores_tasacion?.mejoras_deducciones || null,
-    valor_mercado: parseFloat(String(jsonData.valores_tasacion?.resumen_final?.valor_mercado || '').replace(/[^\d.,]/g, '').replace(',', '.')) || null,
-    valor_hipotecario: parseFloat(String(jsonData.valores_tasacion?.resumen_final?.valor_hipotecario || '').replace(/[^\d.,]/g, '').replace(',', '.')) || null,
-    valor_mercado_adoptado: parseFloat(String(jsonData.valores_tasacion?.resumen_final?.valor_adoptado || '').replace(/[^\d.,]/g, '').replace(',', '.')) || null,
+    valor_mercado: parseValorEspanol(jsonData.valores_tasacion?.resumen_final?.valor_mercado),
+    valor_hipotecario: parseValorEspanol(jsonData.valores_tasacion?.resumen_final?.valor_hipotecario),
+    valor_mercado_adoptado: parseValorEspanol(jsonData.valores_tasacion?.resumen_final?.valor_adoptado),
     metodo_principal: jsonData.valores_tasacion?.resumen_final?.metodo_principal || null,
   };
 
