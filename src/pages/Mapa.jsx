@@ -18,6 +18,8 @@ export default function Mapa() {
 
   useEffect(() => {
     handleSearch('');
+    // Limpiar selección previa para que se vean todos sin filtro
+    setSelected(null);
   }, []);
 
   // Si viene con coordenadas en la URL, seleccionar ese punto
@@ -39,9 +41,6 @@ export default function Mapa() {
     try {
       const res = await searchTasaciones(q);
       setItems(res);
-      if (res.length > 0 && !selected) {
-        setSelected(res[0]);
-      }
     } catch (e) {
       console.error(e);
     } finally {

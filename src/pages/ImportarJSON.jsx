@@ -54,13 +54,12 @@ export default function ImportarJSON() {
           const dataArray = Array.isArray(json) ? json : [json];
           allData.push(...dataArray);
         } else if (f.name.endsWith('.pdf')) {
-          // Para PDF: extraer texto básico (limitación del navegador)
-          // En un entorno real usaríamos pdf.js o un servicio backend
+          // Para PDF: placeholder que requiere revisión manual
           allData.push({
             referencia: `PDF-${f.name.replace('.pdf', '')}-${Date.now()}`,
             tipo: 'Rústico',
             propietario: 'Importado desde PDF',
-            localidad: 'Pendiente revisión',
+            localidad: 'Almería',
             estado: 'Pendiente',
             valor: 0,
             superficie: 0,
