@@ -842,3 +842,39 @@ body, html, #root {
 .connection-dot.online .connection-dot-indicator { background: var(--green); box-shadow: 0 0 6px var(--green); }
 .connection-dot.offline .connection-dot-indicator { background: var(--red); box-shadow: 0 0 6px var(--red); }
 .connection-dot.checking .connection-dot-indicator { background: var(--text-muted); }
+
+
+/* ── Login DB Status ── */
+.login-db-status {
+  margin-top: 1.5rem; padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.login-db-online, .login-db-offline, .login-db-checking {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0.5rem; font-size: 0.8rem; font-weight: 500;
+  padding: 0.5rem 0.75rem; border-radius: var(--radius-sm);
+}
+
+.login-db-online {
+  color: var(--green); background: var(--green-light);
+}
+
+.login-db-offline {
+  color: var(--red); background: var(--red-light);
+}
+
+.login-db-checking {
+  color: var(--text-muted); background: rgba(0,0,0,0.15);
+}
+
+.login-db-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+}
+.login-db-dot.online { background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse-green 2s infinite; }
+.login-db-dot.offline { background: var(--red); box-shadow: 0 0 6px var(--red); animation: pulse-red 2s infinite; }
+
+@keyframes pulse-red {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}

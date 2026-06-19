@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { Shield, Eye, EyeOff, Lock, Mail, AlertTriangle } from 'lucide-react';
-import { loginUser } from '../api/postgrest';
+import { Shield, Eye, EyeOff, Lock, Mail, AlertTriangle, Database } from 'lucide-react';
+import { loginUser, BASE_URL } from '../api/postgrest';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -10,11 +10,27 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [dbStatus, setDbStatus] = useState('checking'); // checking, online, offline
 
   const { login, loginAttempts, lockedUntil, incrementLoginAttempts, resetLoginAttempts } = useStore();
   const navigate = useNavigate();
 
   const [lockCountdown, setLockCountdown] = useState(0);
+
+  // Check de conexión a la base de datos
+  useEffect(() => {
+    const checkDb = async () => {
+      try {
+        const res = await fetch(`${BASE_URL}/usuarios?limit=1`, { method: 'HEAD' });
+        setDbStatus(res.ok ? 'online' : 'offline');
+      } catch {
+        setDbStatus('offline');
+      }
+    };
+    checkDb();
+    const interval = setInterval(checkDb, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Cuenta regresiva si está bloqueado
   useEffect(() => {
@@ -156,6 +172,29 @@ export default function Login() {
             </div>
           )}
         </form>
+
+        <div className="login-db-status">
+          {dbStatus === 'online' && (
+            <div className="login-db-online">
+              <Database size={14} />
+              <span>Conectado a la base de datos</span>
+              <span className="login-db-dot online"></span>
+            </div>
+          )}
+          {dbStatus === 'offline' && (
+            <div className="login-db-offline">
+              <Database size={14} />
+              <span>Sin conexión a la base de datos</span>
+              <span className="login-db-dot offline"></span>
+            </div>
+          )}
+          {dbStatus === 'checking' && (
+            <div className="login-db-checking">
+              <Database size={14} />
+              <span>Verificando conexión...</span>
+            </div>
+          )}
+        </div>
 
         <div className="login-footer">
           <small>Acceso restringido a personal autorizado</small>
