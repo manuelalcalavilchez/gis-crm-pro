@@ -99,45 +99,59 @@ export async function importTasaciones(dataArray) {
 // ── Usuarios ──
 
 export async function loginUser(email, password) {
-  const res = await fetch(`${BASE_URL}/usuarios?email=eq.${encodeURIComponent(email)}&password=eq.${encodeURIComponent(password)}&select=id,email,role,nombre`);
+  const res = await fetch(`${BASE_URL}/usuarios?email=eq.${encodeURIComponent(email)}&password=eq.${encodeURIComponent(password)}`);
   if (!res.ok) throw new Error('Error de conexión');
   return res.json();
 }
 
 export async function fetchUsuarios() {
-  const res = await fetch(`${BASE_URL}/usuarios?select=id,email,role,nombre,created_at&order=created_at.desc`);
+  const res = await fetch(`${BASE_URL}/usuarios?order=email.asc`);
   if (!res.ok) throw new Error('Error al cargar usuarios');
   return res.json();
 }
 
 export async function createUsuario(userData) {
+  // Solo enviar los campos que existen en la tabla: email, password, role
+  const payload = {
+    email: userData.email,
+    password: userData.password,
+    role: userData.role || 'tasador'
+  };
   const res = await fetch(`${BASE_URL}/usuarios`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Prefer': 'return=representation'
     },
-    body: JSON.stringify(userData)
+    body: JSON.stringify(payload)
   });
-  if (!res.ok) throw new Error('Error al crear usuario (quizá el correo ya existe)');
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Error al crear usuario: ${errText}`);
+  }
   return res.json();
 }
 
-export async function updateUsuario(id, userData) {
-  const res = await fetch(`${BASE_URL}/usuarios?id=eq.${id}`, {
+export async function updateUsuario(email, userData) {
+  // Filtrar por email (clave primaria), solo actualizar campos válidos
+  const payload = {};
+  if (userData.role) payload.role = userData.role;
+  if (userData.password) payload.password = userData.password;
+
+  const res = await fetch(`${BASE_URL}/usuarios?email=eq.${encodeURIComponent(email)}`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
       'Prefer': 'return=representation'
     },
-    body: JSON.stringify(userData)
+    body: JSON.stringify(payload)
   });
   if (!res.ok) throw new Error('Error al actualizar usuario');
   return res.json();
 }
 
-export async function deleteUsuario(id) {
-  const res = await fetch(`${BASE_URL}/usuarios?id=eq.${id}`, {
+export async function deleteUsuario(email) {
+  const res = await fetch(`${BASE_URL}/usuarios?email=eq.${encodeURIComponent(email)}`, {
     method: 'DELETE'
   });
   if (!res.ok) throw new Error('Error al eliminar usuario');

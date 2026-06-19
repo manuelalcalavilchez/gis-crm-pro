@@ -4,9 +4,8 @@ import { useStore } from '../store/useStore';
 import { fetchUsuarios as apiFetchUsuarios, createUsuario, updateUsuario, deleteUsuario } from '../api/postgrest';
 
 const ROLES = [
-  { value: 'admin', label: 'Administrador', color: '#ef4444', icon: ShieldCheck },
-  { value: 'editor', label: 'Editor', color: '#f59e0b', icon: Shield },
-  { value: 'viewer', label: 'Lector', color: '#3b82f6', icon: Eye },
+  { value: 'administrador', label: 'Administrador', color: '#ef4444', icon: ShieldCheck },
+  { value: 'tasador', label: 'Tasador', color: '#3b82f6', icon: Eye },
 ];
 
 export default function Usuarios() {
@@ -15,14 +14,14 @@ export default function Usuarios() {
   const [error, setError] = useState('');
   const [mensaje, setMensaje] = useState('');
   const [search, setSearch] = useState('');
-  const [editingId, setEditingId] = useState(null);
+  const [editingEmail, setEditingEmail] = useState(null);
   const [editForm, setEditForm] = useState({});
 
   const currentUser = useStore(state => state.user);
 
   // Estado para formulario de creación
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [formData, setFormData] = useState({ email: '', password: '', role: 'viewer', nombre: '' });
+  const [formData, setFormData] = useState({ email: '', password: '', role: 'tasador' });
   const [creating, setCreating] = useState(false);
 
   const loadUsuarios = async () => {
@@ -39,67 +38,88 @@ export default function Usuarios() {
 
   useEffect(() => { loadUsuarios(); }, []);
 
+  const clearMessages = () => {
+    setTimeout(() => { setError(''); setMensaje(''); }, 4000);
+  };
+
   const handleCreateUser = async (e) => {
     e.preventDefault();
     setMensaje('');
     setError('');
     setCreating(true);
 
+    // Validación mínima
+    if (!formData.email || !formData.password) {
+      setError('Email y contraseña son obligatorios');
+      setCreating(false);
+      return;
+    }
+
+    if (formData.password.length < 4) {
+      setError('La contraseña debe tener al menos 4 caracteres');
+      setCreating(false);
+      return;
+    }
+
     try {
       await createUsuario(formData);
       setMensaje('Usuario creado correctamente');
       setIsFormOpen(false);
-      setFormData({ email: '', password: '', role: 'viewer', nombre: '' });
+      setFormData({ email: '', password: '', role: 'tasador' });
       loadUsuarios();
+      clearMessages();
     } catch (err) {
       setError(err.message);
+      clearMessages();
     } finally {
       setCreating(false);
     }
   };
 
   const handleEditUser = (user) => {
-    setEditingId(user.id);
-    setEditForm({ role: user.role, nombre: user.nombre || '' });
+    setEditingEmail(user.email);
+    setEditForm({ role: user.role });
   };
 
-  const handleSaveEdit = async (userId) => {
+  const handleSaveEdit = async (email) => {
     setError('');
     try {
-      await updateUsuario(userId, editForm);
-      setEditingId(null);
+      await updateUsuario(email, editForm);
+      setEditingEmail(null);
       setMensaje('Usuario actualizado');
       loadUsuarios();
-      setTimeout(() => setMensaje(''), 3000);
+      clearMessages();
     } catch (err) {
       setError(err.message);
+      clearMessages();
     }
   };
 
   const handleDeleteUser = async (user) => {
-    if (user.id === currentUser?.id || user.email === currentUser?.email) {
+    if (user.email === currentUser?.email) {
       setError('No puedes eliminar tu propio usuario');
-      setTimeout(() => setError(''), 3000);
+      clearMessages();
       return;
     }
 
     if (!confirm(`¿Estás seguro de eliminar a ${user.email}?`)) return;
 
     try {
-      await deleteUsuario(user.id);
+      await deleteUsuario(user.email);
       setMensaje('Usuario eliminado');
       loadUsuarios();
-      setTimeout(() => setMensaje(''), 3000);
+      clearMessages();
     } catch (err) {
       setError(err.message);
+      clearMessages();
     }
   };
 
   const filteredUsuarios = usuarios.filter(u =>
-    !search || u.email?.toLowerCase().includes(search.toLowerCase()) || u.nombre?.toLowerCase().includes(search.toLowerCase())
+    !search || u.email?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const getRoleInfo = (role) => ROLES.find(r => r.value === role) || ROLES[2];
+  const getRoleInfo = (role) => ROLES.find(r => r.value === role) || { value: role || 'tasador', label: role || 'Tasador', color: '#3b82f6', icon: Eye };
 
   return (
     <div className="page-container">
@@ -123,15 +143,6 @@ export default function Usuarios() {
           <h3 style={{ marginBottom: '1.5rem' }}>Crear Nuevo Usuario</h3>
           <div className="form-grid">
             <div className="form-group">
-              <label>Nombre completo</label>
-              <input
-                type="text"
-                value={formData.nombre}
-                onChange={e => setFormData({ ...formData, nombre: e.target.value })}
-                placeholder="Juan García"
-              />
-            </div>
-            <div className="form-group">
               <label>Email *</label>
               <input
                 type="email"
@@ -146,10 +157,10 @@ export default function Usuarios() {
               <input
                 type="password"
                 required
-                minLength={6}
+                minLength={4}
                 value={formData.password}
                 onChange={e => setFormData({ ...formData, password: e.target.value })}
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Mínimo 4 caracteres"
               />
             </div>
             <div className="form-group">
@@ -176,7 +187,7 @@ export default function Usuarios() {
           <Search size={16} />
           <input
             type="text"
-            placeholder="Buscar por email o nombre..."
+            placeholder="Buscar por email..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="search-input-inline"
@@ -200,7 +211,7 @@ export default function Usuarios() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Usuario</th>
+                <th>Email</th>
                 <th>Rol</th>
                 <th style={{ textAlign: 'right' }}>Acciones</th>
               </tr>
@@ -208,19 +219,18 @@ export default function Usuarios() {
             <tbody>
               {filteredUsuarios.map(user => {
                 const roleInfo = getRoleInfo(user.role);
-                const isEditing = editingId === user.id;
-                const isCurrentUser = user.id === currentUser?.id || user.email === currentUser?.email;
+                const isEditing = editingEmail === user.email;
+                const isCurrentUser = user.email === currentUser?.email;
 
                 return (
-                  <tr key={user.id || user.email}>
+                  <tr key={user.email}>
                     <td>
                       <div className="user-cell">
                         <div className="user-avatar" style={{ background: `${roleInfo.color}20`, color: roleInfo.color }}>
-                          {(user.nombre || user.email).charAt(0).toUpperCase()}
+                          {user.email.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <span className="user-name">{user.nombre || 'Sin nombre'}</span>
-                          <span className="user-email">{user.email}</span>
+                          <span className="user-name">{user.email}</span>
                         </div>
                         {isCurrentUser && <span className="badge badge-accent" style={{ marginLeft: '0.5rem' }}>Tú</span>}
                       </div>
@@ -245,10 +255,10 @@ export default function Usuarios() {
                       <div className="table-actions">
                         {isEditing ? (
                           <>
-                            <button className="btn-icon-sm" onClick={() => handleSaveEdit(user.id)} title="Guardar">
+                            <button className="btn-icon-sm" onClick={() => handleSaveEdit(user.email)} title="Guardar">
                               <Save size={14} />
                             </button>
-                            <button className="btn-icon-sm" onClick={() => setEditingId(null)} title="Cancelar">
+                            <button className="btn-icon-sm" onClick={() => setEditingEmail(null)} title="Cancelar">
                               <X size={14} />
                             </button>
                           </>

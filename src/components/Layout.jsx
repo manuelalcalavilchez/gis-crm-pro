@@ -53,10 +53,10 @@ export default function Layout() {
           {user && (
             <div className="nav-user-info">
               <div className="nav-user-avatar">
-                {(user.nombre || user.email || '?').charAt(0).toUpperCase()}
+                {(user.email || '?').charAt(0).toUpperCase()}
               </div>
               <div className="nav-user-details">
-                <span className="nav-user-name">{user.nombre || user.email}</span>
+                <span className="nav-user-name">{user.email}</span>
                 <span className="nav-user-role">
                   <Shield size={10} /> {user.role || 'usuario'}
                 </span>
