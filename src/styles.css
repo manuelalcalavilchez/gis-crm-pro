@@ -968,3 +968,13 @@ body, html, #root {
   .fichas-list-panel { display: none; }
   .fichas-list-toggle { display: none; }
 }
+
+
+/* ── Sidebar Actions (Mapa) ── */
+.sidebar-actions {
+  display: flex; gap: 0.5rem; margin-top: 1.25rem;
+  padding-top: 1rem; border-top: 1px solid var(--border-color);
+}
+.sidebar-actions .btn-primary { flex: 1; }
+.sidebar-actions .btn-secondary,
+.sidebar-actions .btn-danger { padding: 0.7rem 0.85rem; }

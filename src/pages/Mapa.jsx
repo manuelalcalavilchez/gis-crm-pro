@@ -3,9 +3,9 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import MapView from "../components/MapView";
 import SearchBar from "../components/SearchBar";
 import ConnectionStatus from "../components/ConnectionStatus";
-import { searchTasaciones } from "../api/postgrest";
+import { searchTasaciones, deleteTasacion } from "../api/postgrest";
 import { useStore } from "../store/useStore";
-import { MapPin, Euro, Ruler, Tag, Calendar, ExternalLink, User, List, X, ChevronRight } from "lucide-react";
+import { MapPin, Euro, Ruler, Tag, Calendar, ExternalLink, User, List, X, Edit3, Trash2 } from "lucide-react";
 
 export default function Mapa() {
   const { items, setItems, selected, setSelected } = useStore();
@@ -13,6 +13,8 @@ export default function Mapa() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [showList, setShowList] = useState(true);
+  const [deleting, setDeleting] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     handleSearch('');
@@ -49,6 +51,24 @@ export default function Mapa() {
 
   const handleSelectItem = (item) => {
     setSelected(item);
+  };
+
+  const handleDelete = async () => {
+    if (!selected) return;
+    setDeleting(selected.id);
+    try {
+      await deleteTasacion(selected.id);
+      // Quitar de la lista local
+      const updated = items.filter(i => i.id !== selected.id);
+      setItems(updated);
+      setSelected(updated.length > 0 ? updated[0] : null);
+      setShowDeleteConfirm(false);
+    } catch (err) {
+      console.error(err);
+      alert('Error al eliminar la ficha');
+    } finally {
+      setDeleting(null);
+    }
   };
 
   // Parsear coordenadas del campo lote
@@ -176,13 +196,28 @@ export default function Mapa() {
                 )}
               </div>
 
-              <button
-                className="btn-primary"
-                style={{ width: '100%', marginTop: '1.5rem' }}
-                onClick={() => navigate(`/ficha/${selected.id}`)}
-              >
-                <ExternalLink size={16} /> Ver ficha completa
-              </button>
+              <div className="sidebar-actions">
+                <button
+                  className="btn-primary"
+                  onClick={() => navigate(`/ficha/${selected.id}`)}
+                >
+                  <ExternalLink size={15} /> Ver / Editar
+                </button>
+                <button
+                  className="btn-secondary"
+                  onClick={() => navigate(`/ficha/${selected.id}`)}
+                  title="Editar ficha"
+                >
+                  <Edit3 size={15} />
+                </button>
+                <button
+                  className="btn-danger"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  title="Eliminar ficha"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
             </div>
           ) : (
             <div className="empty-state">
@@ -194,6 +229,22 @@ export default function Mapa() {
             </div>
           )}
         </aside>
+
+        {/* Modal de confirmación de eliminación */}
+        {showDeleteConfirm && selected && (
+          <div className="modal-overlay" onClick={() => setShowDeleteConfirm(false)}>
+            <div className="modal-card" onClick={e => e.stopPropagation()}>
+              <h3>Eliminar Ficha</h3>
+              <p>¿Seguro que quieres eliminar <strong>{selected.referencia}</strong>? Esta acción no se puede deshacer.</p>
+              <div className="modal-actions">
+                <button className="btn-secondary" onClick={() => setShowDeleteConfirm(false)}>Cancelar</button>
+                <button className="btn-danger" onClick={handleDelete} disabled={!!deleting}>
+                  {deleting ? 'Eliminando...' : 'Sí, eliminar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
