@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import MapView from "../components/MapView";
 import SearchBar from "../components/SearchBar";
+import ConnectionStatus from "../components/ConnectionStatus";
 import { searchTasaciones } from "../api/postgrest";
 import { useStore } from "../store/useStore";
 import { MapPin, Euro, Ruler, Tag, Calendar, ExternalLink, User } from "lucide-react";
@@ -62,7 +63,10 @@ export default function Mapa() {
   return (
     <div className="mapa-page">
       <header className="page-header mapa-header">
-        <h2><MapPin size={20} style={{ display: 'inline', marginRight: '0.5rem' }} />Visor Cartográfico</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <h2><MapPin size={20} style={{ display: 'inline', marginRight: '0.5rem' }} />Visor Cartográfico</h2>
+          <ConnectionStatus compact />
+        </div>
         <SearchBar onSearch={handleSearch} loading={loading} />
       </header>
 

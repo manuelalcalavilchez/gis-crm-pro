@@ -27,8 +27,9 @@ export async function searchTasaciones(query, filters = {}) {
   if (filters.valorMin) params.push(`valor=gte.${filters.valorMin}`);
   if (filters.valorMax) params.push(`valor=lte.${filters.valorMax}`);
 
-  // Ordenar por fecha descendente
+  // Ordenar por fecha descendente, traer todos los registros
   params.push('order=fecha.desc');
+  params.push('limit=10000');
 
   const queryStr = params.length > 0 ? `?${params.join('&')}` : '';
   const res = await fetch(`${BASE_URL}/importacion_tasaciones${queryStr}`);

@@ -1,35 +1,74 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle2, XCircle } from 'lucide-react';
+import { Wifi, WifiOff, Database, RefreshCw } from 'lucide-react';
+import { BASE_URL } from '../api/postgrest';
 
 /**
- * Simple health‑check component.
- * It periodically fetches the API root (or the URL defined in VITE_API_URL)
- * and displays a green check when the request succeeds, otherwise a red X.
+ * Connection status indicator.
+ * Pings the PostgREST API every 10s and shows connected/disconnected state.
+ * Also shows a count of records if connected (optional).
  */
-export default function ConnectionStatus() {
-  const [online, setOnline] = useState(null);
+export default function ConnectionStatus({ compact = false }) {
+  const [status, setStatus] = useState('checking'); // checking, online, offline
+  const [recordCount, setRecordCount] = useState(null);
+  const [lastCheck, setLastCheck] = useState(null);
+
+  const check = async () => {
+    try {
+      const resp = await fetch(`${BASE_URL}/importacion_tasaciones?select=id`, {
+        method: 'HEAD',
+        headers: { 'Prefer': 'count=exact' }
+      });
+      if (resp.ok) {
+        setStatus('online');
+        // Extraer conteo del header Content-Range
+        const range = resp.headers.get('content-range');
+        if (range) {
+          const total = range.split('/')[1];
+          if (total && total !== '*') setRecordCount(Number(total));
+        }
+      } else {
+        setStatus('offline');
+      }
+      setLastCheck(new Date());
+    } catch (e) {
+      setStatus('offline');
+      setLastCheck(new Date());
+    }
+  };
 
   useEffect(() => {
-    const url = import.meta.env.VITE_API_URL ?? '/';
-    const check = async () => {
-      try {
-        const resp = await fetch(url, { method: 'GET' });
-        setOnline(resp.ok);
-      } catch (e) {
-        setOnline(false);
-      }
-    };
-    // initial check
     check();
-    const interval = setInterval(check, 5000); // every 5 s
+    const interval = setInterval(check, 15000); // cada 15s
     return () => clearInterval(interval);
   }, []);
 
-  if (online === null) return null; // no UI until first check
+  if (compact) {
+    // Versión compacta para header del mapa
+    return (
+      <div className={`connection-dot ${status}`} title={status === 'online' ? `Conectado - ${recordCount || '?'} registros` : 'Sin conexión'}>
+        <span className="connection-dot-indicator"></span>
+      </div>
+    );
+  }
 
-  return online ? (
-    <CheckCircle2 size={20} color="var(--green)" data-testid="connection-ok" />
-  ) : (
-    <XCircle size={20} color="var(--red)" data-testid="connection-fail" />
+  return (
+    <div className={`connection-status ${status}`}>
+      <div className="connection-status-icon">
+        {status === 'online' && <Database size={14} />}
+        {status === 'offline' && <WifiOff size={14} />}
+        {status === 'checking' && <RefreshCw size={14} className="spinning" />}
+      </div>
+      <div className="connection-status-info">
+        <span className="connection-status-label">
+          {status === 'online' && 'Conectado'}
+          {status === 'offline' && 'Sin conexión'}
+          {status === 'checking' && 'Verificando...'}
+        </span>
+        {status === 'online' && recordCount !== null && (
+          <span className="connection-status-count">{recordCount} fichas</span>
+        )}
+      </div>
+      <span className={`connection-status-dot ${status}`}></span>
+    </div>
   );
 }

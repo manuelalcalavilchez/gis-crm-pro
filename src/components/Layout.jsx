@@ -1,6 +1,7 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { Map, BarChart3, Upload, PlusSquare, LogOut, Users, Shield } from 'lucide-react';
 import { useStore } from '../store/useStore';
+import ConnectionStatus from './ConnectionStatus';
 
 export default function Layout() {
   const { logout, user } = useStore();
@@ -50,6 +51,7 @@ export default function Layout() {
         </nav>
 
         <div className="nav-footer">
+          <ConnectionStatus />
           {user && (
             <div className="nav-user-info">
               <div className="nav-user-avatar">

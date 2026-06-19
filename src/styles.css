@@ -783,3 +783,62 @@ body, html, #root {
 }
 .leaflet-popup-tip { background: var(--bg-panel) !important; }
 .leaflet-popup-close-button { color: var(--text-muted) !important; }
+
+
+/* ── Connection Status ── */
+.connection-status {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.6rem 0.85rem; border-radius: var(--radius-md);
+  background: rgba(0,0,0,0.2); border: 1px solid var(--border-color);
+  margin-bottom: 0.75rem; transition: var(--transition);
+}
+.connection-status.online { border-color: rgba(16,185,129,0.25); }
+.connection-status.offline { border-color: rgba(239,68,68,0.25); background: var(--red-light); }
+
+.connection-status-icon {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.connection-status.online .connection-status-icon { color: var(--green); }
+.connection-status.offline .connection-status-icon { color: var(--red); }
+.connection-status.checking .connection-status-icon { color: var(--text-muted); }
+
+.connection-status-info {
+  display: flex; flex-direction: column; flex: 1; min-width: 0;
+}
+.connection-status-label {
+  font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.connection-status.online .connection-status-label { color: var(--green); }
+.connection-status.offline .connection-status-label { color: var(--red); }
+.connection-status.checking .connection-status-label { color: var(--text-muted); }
+
+.connection-status-count {
+  font-size: 0.7rem; color: var(--text-muted); margin-top: 0.1rem;
+}
+
+.connection-status-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.connection-status-dot.online { background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse-green 2s infinite; }
+.connection-status-dot.offline { background: var(--red); box-shadow: 0 0 6px var(--red); }
+.connection-status-dot.checking { background: var(--text-muted); }
+
+@keyframes pulse-green {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Versión compacta (dot) para headers */
+.connection-dot {
+  display: flex; align-items: center; justify-content: center;
+  width: 10px; height: 10px;
+}
+.connection-dot-indicator {
+  width: 8px; height: 8px; border-radius: 50%; display: block;
+}
+.connection-dot.online .connection-dot-indicator { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.connection-dot.offline .connection-dot-indicator { background: var(--red); box-shadow: 0 0 6px var(--red); }
+.connection-dot.checking .connection-dot-indicator { background: var(--text-muted); }

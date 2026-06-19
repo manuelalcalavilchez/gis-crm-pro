@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
 import { Filter, TrendingUp, MapPin, Euro, FileText, RefreshCw } from 'lucide-react';
-import ConnectionStatus from '../components/ConnectionStatus.jsx';
 import { searchTasaciones } from '../api/postgrest';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6', '#f97316', '#06b6d4'];
@@ -160,7 +159,6 @@ export default function Dashboard() {
           <button className="btn-icon" onClick={handleRefresh} disabled={refreshing} title="Actualizar datos">
             <RefreshCw size={18} className={refreshing ? 'spinning' : ''} />
           </button>
-          <ConnectionStatus />
         </div>
       </header>
 
