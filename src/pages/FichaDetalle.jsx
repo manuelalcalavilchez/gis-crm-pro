@@ -210,7 +210,7 @@ export default function FichaDetalle() {
                 )}
               </div>
               <div className="ficha-field">
-                <label><User size={14} /> Propietario</label>
+                <label><User size={14} /> Tasador</label>
                 {editing ? (
                   <input value={editData.propietario} onChange={e => handleChange('propietario', e.target.value)} />
                 ) : (

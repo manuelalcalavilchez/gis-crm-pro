@@ -88,7 +88,7 @@ export default function Mapa() {
 
               <div className="details">
                 <div className="detail-item">
-                  <span className="label"><User size={12} /> Propietario</span>
+                  <span className="label"><User size={12} /> Tasador</span>
                   <span className="value">{selected.propietario || 'Sin asignar'}</span>
                 </div>
                 <div className="detail-item">

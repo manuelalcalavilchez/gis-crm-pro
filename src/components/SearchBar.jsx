@@ -17,7 +17,7 @@ export default function SearchBar({ onSearch, loading }) {
           className="search-input"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Buscar por referencia, localidad, propietario..."
+          placeholder="Buscar por referencia, localidad, tasador..."
           disabled={loading}
         />
       </div>

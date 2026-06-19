@@ -248,7 +248,7 @@ export default function ImportarJSON() {
                     <input value={record.referencia} onChange={e => editMappedField(idx, 'referencia', e.target.value)} />
                   </div>
                   <div className="record-field">
-                    <label>Propietario</label>
+                    <label>Tasador</label>
                     <input value={record.propietario} onChange={e => editMappedField(idx, 'propietario', e.target.value)} />
                   </div>
                   <div className="record-field">

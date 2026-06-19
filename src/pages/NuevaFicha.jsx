@@ -118,12 +118,12 @@ export default function NuevaFicha() {
               </select>
             </div>
             <div className="form-group">
-              <label>Propietario / Cliente</label>
+              <label>Tasador</label>
               <input
                 name="propietario"
                 value={formData.propietario}
                 onChange={handleChange}
-                placeholder="Nombre del propietario o tasador"
+                placeholder="Nombre del tasador"
               />
             </div>
           </div>

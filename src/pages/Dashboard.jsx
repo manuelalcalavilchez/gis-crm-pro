@@ -135,7 +135,7 @@ export default function Dashboard() {
 
   // Valor por propietario (Top 8)
   const propietariosValor = datosFiltrados.reduce((acc, curr) => {
-    const k = curr.propietario || 'Sin propietario';
+    const k = curr.propietario || 'Sin tasador';
     if (!acc[k]) acc[k] = { nombre: k, valor: 0, count: 0 };
     acc[k].valor += Number(curr.valor) || 0;
     acc[k].count += 1;
@@ -198,7 +198,7 @@ export default function Dashboard() {
             </select>
           </div>
           <div className="form-group">
-            <label>Propietario</label>
+            <label>Tasador</label>
             <select value={filtroPropietario} onChange={e => setFiltroPropietario(e.target.value)}>
               <option value="">Todos</option>
               {opcionesPropietarios.map(p => <option key={p} value={p}>{p}</option>)}
@@ -344,7 +344,7 @@ export default function Dashboard() {
 
         {/* Valor por Propietario */}
         <div className="chart-card chart-card-wide">
-          <h3>Top Propietarios por Valor</h3>
+          <h3>Top Tasadores por Valor</h3>
           <div className="chart-wrapper">
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={dataPropietarios} layout="vertical" margin={{ top: 10, right: 30, left: 100, bottom: 5 }}>
