@@ -82,7 +82,7 @@ export async function deleteTasacion(id) {
 }
 
 export async function importTasaciones(dataArray) {
-  const res = await fetch(`${BASE_URL}/importacion_tasaciones`, {
+  const res = await fetch(`${BASE_URL}/importacion_tasaciones?on_conflict=referencia`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
