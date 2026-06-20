@@ -74,21 +74,21 @@ export default function Login() {
       <div className="login-card">
         <div className="login-header">
           <div className="login-icon-wrapper"><Shield className="login-icon" size={32} /></div>
-          <h2>Tasaciones Jorge Mart\u00ednez Sola</h2>
-          <p>by Tecnolog\u00eda Alcal\u00e1</p>
-          <span className="login-subtitle">Visualizador de Informes de Tasaci\u00f3n</span>
+          <h2>Tasaciones Jorge Martínez Sola</h2>
+          <p>by Tecnología Alcalá</p>
+          <span className="login-subtitle">Visualizador de Informes de Tasación</span>
         </div>
         <form onSubmit={handleLogin} className="login-form">
           {error && <div className="login-error"><AlertTriangle size={16} /><span>{error}</span></div>}
           {isLocked && <div className="login-locked"><Lock size={16} /><span>Bloqueado: {lockCountdown}s restantes</span></div>}
           <div className="form-group">
-            <label><Mail size={14} /> Correo Electr\u00f3nico</label>
+            <label><Mail size={14} /> Correo Electrónico</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="usuario@ejemplo.com" autoComplete="username" required disabled={isLocked} />
           </div>
           <div className="form-group">
-            <label><Lock size={14} /> Contrase\u00f1a</label>
+            <label><Lock size={14} /> Contraseña</label>
             <div className="input-with-icon">
-              <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" autoComplete="current-password" required disabled={isLocked} />
+              <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" autoComplete="current-password" required disabled={isLocked} />
               <button type="button" className="password-toggle" onClick={() => setShowPassword(!showPassword)} tabIndex={-1}>
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
@@ -106,7 +106,7 @@ export default function Login() {
         </form>
         <div className="login-db-status">
           {dbStatus === 'online' && <div className="login-db-online"><Database size={14} /><span>BD conectada</span><span className="login-db-dot online"></span></div>}
-          {dbStatus === 'offline' && <div className="login-db-offline"><Database size={14} /><span>Sin conexi\u00f3n a BD</span><span className="login-db-dot offline"></span></div>}
+          {dbStatus === 'offline' && <div className="login-db-offline"><Database size={14} /><span>Sin conexión a BD</span><span className="login-db-dot offline"></span></div>}
           {dbStatus === 'checking' && <div className="login-db-checking"><Database size={14} /><span>Verificando...</span></div>}
         </div>
         <div className="login-footer"><small>Acceso restringido a personal autorizado</small></div>

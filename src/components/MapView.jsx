@@ -65,7 +65,7 @@ export default function MapView({ items, selected, onSelect }) {
                 <small>{it.clase_general}</small><br />
                 {it.valor_mercado_adoptado && (
                   <span style={{ color: '#10b981', fontWeight: 'bold' }}>
-                    {Number(it.valor_mercado_adoptado).toLocaleString('es-ES')} \u20ac
+                    {Number(it.valor_mercado_adoptado).toLocaleString('es-ES')} €
                   </span>
                 )}
               </div>

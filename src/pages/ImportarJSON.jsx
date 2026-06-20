@@ -37,7 +37,7 @@ export default function ImportarJSON() {
     } catch (err) {
       console.error(err);
       setStatus('error');
-      setMessage('Error al procesar los archivos. Verifica que los JSON sean v\u00e1lidos.');
+      setMessage('Error al procesar los archivos. Verifica que los JSON sean válidos.');
     }
   };
 
@@ -57,7 +57,7 @@ export default function ImportarJSON() {
     try {
       const resultado = await importarLoteMasivo(rawData);
       setStatus('success');
-      setMessage(`Importaci\u00f3n completada: ${resultado.exitos} de ${resultado.total} informes importados correctamente.${resultado.errores.length > 0 ? ` ${resultado.errores.length} errores.` : ''}`);
+      setMessage(`Importación completada: ${resultado.exitos} de ${resultado.total} informes importados correctamente.${resultado.errores.length > 0 ? ` ${resultado.errores.length} errores.` : ''}`);
       setFiles([]);
       setRawData([]);
     } catch (err) {
@@ -83,9 +83,9 @@ export default function ImportarJSON() {
   const getResumen = (item) => {
     if (item.identificacion_informe) {
       return {
-        titulo: item.identificacion_informe.numero_informe || 'Sin n\u00famero',
+        titulo: item.identificacion_informe.numero_informe || 'Sin número',
         municipio: item.identificacion_y_localizacion?.municipio || 'Sin municipio',
-        clase: item.identificacion_y_localizacion?.clase_general_inmueble || 'Finca R\u00fastica',
+        clase: item.identificacion_y_localizacion?.clase_general_inmueble || 'Finca Rústica',
         solicitante: item.solicitante_y_finalidad?.solicitante?.nombre || 'Sin solicitante',
         valor: item.valores_tasacion?.resumen_final?.valor_adoptado || item.valores_tasacion?.valor_comparacion?.valor_total || 'Sin valorar',
       };
@@ -103,8 +103,8 @@ export default function ImportarJSON() {
   return (
     <div className="page-container">
       <header className="page-header">
-        <h2>Importar Informes de Tasaci\u00f3n</h2>
-        <p className="text-muted">Sube archivos JSON (formato completo de informe o simplificado). Importaci\u00f3n masiva a BD.</p>
+        <h2>Importar Informes de Tasación</h2>
+        <p className="text-muted">Sube archivos JSON (formato completo de informe o simplificado). Importación masiva a BD.</p>
       </header>
 
       {(status === 'idle' || status === 'error' || status === 'success') && (
@@ -112,7 +112,7 @@ export default function ImportarJSON() {
           onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
           <div className="upload-zone">
             <div className="upload-icon-wrapper"><UploadCloud size={48} /></div>
-            <h3>Arrastra archivos JSON aqu\u00ed o haz clic para seleccionar</h3>
+            <h3>Arrastra archivos JSON aquí o haz clic para seleccionar</h3>
             <p className="text-muted">Cada archivo puede contener un informe o un array de informes</p>
             <input type="file" accept=".json" multiple onChange={handleFileChange} className="file-input" id="file-upload" />
             <label htmlFor="file-upload" className="btn-primary" style={{ marginTop: '1rem' }}>
@@ -142,7 +142,7 @@ export default function ImportarJSON() {
               <button className="btn-secondary" onClick={reset}><RefreshCw size={16} /> Cancelar</button>
               <button className="btn-primary" onClick={procesarYSubir} disabled={status === 'uploading'}>
                 <Send size={16} />
-                <span>{status === 'uploading' ? 'Importando...' : 'Confirmar Importaci\u00f3n Masiva'}</span>
+                <span>{status === 'uploading' ? 'Importando...' : 'Confirmar Importación Masiva'}</span>
               </button>
             </div>
           </div>
@@ -168,7 +168,7 @@ export default function ImportarJSON() {
                     </div>
                   </div>
                   <div className="record-fields">
-                    <div className="record-field"><label>N\u00ba Informe</label><span>{resumen.titulo}</span></div>
+                    <div className="record-field"><label>Nº Informe</label><span>{resumen.titulo}</span></div>
                     <div className="record-field"><label>Solicitante</label><span>{resumen.solicitante}</span></div>
                     <div className="record-field"><label>Municipio</label><span>{resumen.municipio}</span></div>
                     <div className="record-field"><label>Valor</label><span>{resumen.valor}</span></div>

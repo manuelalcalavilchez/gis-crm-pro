@@ -3,17 +3,17 @@ import { Save, MapPin, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { createInforme } from '../api/postgrest';
 
-const CLASES = ['Finca R\u00fastica', 'Urbano', 'Industrial', 'Comercial', 'Residencial'];
+const CLASES = ['Finca Rústica', 'Urbano', 'Industrial', 'Comercial', 'Residencial'];
 
 export default function NuevaFicha() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     numero_informe: '',
-    clase_general: 'Finca R\u00fastica',
+    clase_general: 'Finca Rústica',
     solicitante_nombre: '',
     municipio: '',
     provincia: '',
-    estado_actual: 'En explotaci\u00f3n agr\u00edcola',
+    estado_actual: 'En explotación agrícola',
     finalidad: 'Asesoramiento - Valor de mercado',
     valor_mercado_adoptado: '',
     latitud: '',
@@ -64,28 +64,28 @@ export default function NuevaFicha() {
       }, 1200);
     } catch (err) {
       setStatus('error');
-      setErrorMsg(err.message || 'Error al guardar. Verifica que el n\u00famero de informe sea \u00fanico.');
+      setErrorMsg(err.message || 'Error al guardar. Verifica que el número de informe sea único.');
     }
   };
 
   const resetForm = () => {
-    setFormData({ numero_informe: '', clase_general: 'Finca R\u00fastica', solicitante_nombre: '', municipio: '', provincia: '', estado_actual: 'En explotaci\u00f3n agr\u00edcola', finalidad: 'Asesoramiento - Valor de mercado', valor_mercado_adoptado: '', latitud: '', longitud: '', paraje: '', observaciones_generales: '' });
+    setFormData({ numero_informe: '', clase_general: 'Finca Rústica', solicitante_nombre: '', municipio: '', provincia: '', estado_actual: 'En explotación agrícola', finalidad: 'Asesoramiento - Valor de mercado', valor_mercado_adoptado: '', latitud: '', longitud: '', paraje: '', observaciones_generales: '' });
     setStatus('idle'); setErrorMsg('');
   };
 
   return (
     <div className="page-container">
       <header className="page-header">
-        <h2>Nuevo Informe de Tasaci\u00f3n</h2>
-        <p className="text-muted">Alta manual r\u00e1pida. Para importar datos completos desde JSON/PDF usa la secci\u00f3n Importar.</p>
+        <h2>Nuevo Informe de Tasación</h2>
+        <p className="text-muted">Alta manual rápida. Para importar datos completos desde JSON/PDF usa la sección Importar.</p>
       </header>
 
       <form onSubmit={handleSubmit} className="form-card">
         <div className="form-section">
-          <h3>Identificaci\u00f3n</h3>
+          <h3>Identificación</h3>
           <div className="form-grid">
             <div className="form-group">
-              <label>N\u00ba Informe</label>
+              <label>Nº Informe</label>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <input name="numero_informe" value={formData.numero_informe} onChange={handleChange} placeholder="Ej: VT-2024-001" style={{ flex: 1 }} />
                 <button type="button" className="btn-icon" onClick={generateRef} title="Generar"><RotateCcw size={16} /></button>
@@ -109,10 +109,10 @@ export default function NuevaFicha() {
         </div>
 
         <div className="form-section">
-          <h3><MapPin size={16} style={{ display: 'inline', marginRight: '0.5rem' }} />Ubicaci\u00f3n</h3>
+          <h3><MapPin size={16} style={{ display: 'inline', marginRight: '0.5rem' }} />Ubicación</h3>
           <div className="form-grid">
             <div className="form-group"><label>Municipio</label><input name="municipio" value={formData.municipio} onChange={handleChange} placeholder="Ej: Roquetas de Mar" /></div>
-            <div className="form-group"><label>Provincia</label><input name="provincia" value={formData.provincia} onChange={handleChange} placeholder="Ej: Almer\u00eda" /></div>
+            <div className="form-group"><label>Provincia</label><input name="provincia" value={formData.provincia} onChange={handleChange} placeholder="Ej: Almería" /></div>
             <div className="form-group"><label>Paraje</label><input name="paraje" value={formData.paraje} onChange={handleChange} placeholder="Ej: Los Llanos" /></div>
             <div className="form-group"><label>Estado actual</label><input name="estado_actual" value={formData.estado_actual} onChange={handleChange} /></div>
             <div className="form-group"><label>Latitud</label><input name="latitud" value={formData.latitud} onChange={handleChange} placeholder="36.8381" /></div>
@@ -121,10 +121,10 @@ export default function NuevaFicha() {
         </div>
 
         <div className="form-section">
-          <h3>Valoraci\u00f3n</h3>
+          <h3>Valoración</h3>
           <div className="form-grid">
             <div className="form-group highlight-group">
-              <label>Valor de Mercado Adoptado (\u20ac)</label>
+              <label>Valor de Mercado Adoptado (€)</label>
               <input type="number" step="0.01" name="valor_mercado_adoptado" value={formData.valor_mercado_adoptado} onChange={handleChange} placeholder="0.00" />
             </div>
           </div>

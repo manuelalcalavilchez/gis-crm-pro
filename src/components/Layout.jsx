@@ -20,8 +20,8 @@ export default function Layout() {
         <div className="nav-brand">
           <div className="brand-logo">JMS</div>
           <div>
-            <h2>Jorge Mart\u00ednez Sola</h2>
-            <span>by Tecnolog\u00eda Alcal\u00e1</span>
+            <h2>Jorge Martínez Sola</h2>
+            <span>by Tecnología Alcalá</span>
           </div>
         </div>
 
@@ -71,7 +71,7 @@ export default function Layout() {
           )}
           <button onClick={handleLogout} className="logout-btn">
             <LogOut size={18} />
-            <span>Cerrar Sesi\u00f3n</span>
+            <span>Cerrar Sesión</span>
           </button>
         </div>
       </aside>

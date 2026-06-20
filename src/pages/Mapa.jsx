@@ -55,7 +55,7 @@ export default function Mapa() {
     <div className="mapa-page">
       <header className="page-header mapa-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <h2><MapPin size={20} style={{ display: 'inline', marginRight: '0.5rem' }} />Visor Cartogr\u00e1fico</h2>
+          <h2><MapPin size={20} style={{ display: 'inline', marginRight: '0.5rem' }} />Visor Cartográfico</h2>
           <ConnectionStatus compact />
           <span className="badge badge-accent">{resultCount} informes</span>
         </div>
@@ -124,7 +124,7 @@ export default function Mapa() {
                 </div>
                 <div className="detail-item">
                   <span className="label"><Tag size={12} /> Clase</span>
-                  <span className="value">{selected.clase_general || 'Finca R\u00fastica'}</span>
+                  <span className="value">{selected.clase_general || 'Finca Rústica'}</span>
                 </div>
                 <div className="detail-item">
                   <span className="label"><FileText size={12} /> Finalidad</span>
@@ -137,7 +137,7 @@ export default function Mapa() {
                   </div>
                 )}
                 <div className="detail-item">
-                  <span className="label"><Calendar size={12} /> Fecha emisi\u00f3n</span>
+                  <span className="label"><Calendar size={12} /> Fecha emisión</span>
                   <span className="value">{selected.fecha_emision || 'Sin fecha'}</span>
                 </div>
                 <div className="detail-item highlight">
@@ -177,11 +177,11 @@ export default function Mapa() {
           <div className="modal-overlay" onClick={() => setShowDeleteConfirm(false)}>
             <div className="modal-card" onClick={e => e.stopPropagation()}>
               <h3>Eliminar Informe</h3>
-              <p>\u00bfSeguro que quieres eliminar <strong>{selected.numero_informe || `INF-${selected.id}`}</strong>? Se borrar\u00e1n tambi\u00e9n los datos catastrales, cultivos y mejoras asociados.</p>
+              <p>¿Seguro que quieres eliminar <strong>{selected.numero_informe || `INF-${selected.id}`}</strong>? Se borrarán también los datos catastrales, cultivos y mejoras asociados.</p>
               <div className="modal-actions">
                 <button className="btn-secondary" onClick={() => setShowDeleteConfirm(false)}>Cancelar</button>
                 <button className="btn-danger" onClick={handleDelete} disabled={deleting}>
-                  {deleting ? 'Eliminando...' : 'S\u00ed, eliminar'}
+                  {deleting ? 'Eliminando...' : 'Sí, eliminar'}
                 </button>
               </div>
             </div>

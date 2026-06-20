@@ -65,15 +65,15 @@ export default function FichaDetalle() {
   if (loading) return <div className="loading-state"><div className="spinner"></div><p>Cargando informe completo...</p></div>;
   if (!ficha) return <div className="page-container"><div className="empty-state"><AlertTriangle size={48} /><h3>Informe no encontrado</h3><button className="btn-primary" onClick={() => navigate(-1)}><ArrowLeft size={16} /> Volver</button></div></div>;
 
-  const formatVal = (v) => v ? Number(v).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' }) : '\u2014';
+  const formatVal = (v) => v ? Number(v).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' }) : '—';
 
   const tabs = [
     { id: 'general', label: 'General' },
-    { id: 'ubicacion', label: 'Ubicaci\u00f3n' },
+    { id: 'ubicacion', label: 'Ubicación' },
     { id: 'catastro', label: 'Catastro' },
     { id: 'cultivos', label: 'Cultivos' },
     { id: 'mejoras', label: 'Mejoras' },
-    { id: 'valoracion', label: 'Valoraci\u00f3n' },
+    { id: 'valoracion', label: 'Valoración' },
     { id: 'reservas', label: 'Reservas' },
   ];
 
@@ -102,11 +102,11 @@ export default function FichaDetalle() {
       {showDeleteConfirm && (
         <div className="modal-overlay" onClick={() => setShowDeleteConfirm(false)}>
           <div className="modal-card" onClick={e => e.stopPropagation()}>
-            <h3>Confirmar eliminaci\u00f3n</h3>
-            <p>\u00bfEliminar el informe <strong>{ficha.numero_informe || `ID-${ficha.id}`}</strong>? Se borrar\u00e1n todos los datos asociados (catastro, cultivos, mejoras, reservas).</p>
+            <h3>Confirmar eliminación</h3>
+            <p>¿Eliminar el informe <strong>{ficha.numero_informe || `ID-${ficha.id}`}</strong>? Se borrarán todos los datos asociados (catastro, cultivos, mejoras, reservas).</p>
             <div className="modal-actions">
               <button className="btn-secondary" onClick={() => setShowDeleteConfirm(false)}>Cancelar</button>
-              <button className="btn-danger" onClick={handleDelete}>S\u00ed, eliminar</button>
+              <button className="btn-danger" onClick={handleDelete}>Sí, eliminar</button>
             </div>
           </div>
         </div>
@@ -147,13 +147,13 @@ export default function FichaDetalle() {
               <div className="ficha-fields">
                 <Field label="Nombre" value={ficha.solicitante_nombre} editing={editing} field="solicitante_nombre" editData={editData} onChange={handleChange} />
                 <Field label="DNI" value={ficha.solicitante_dni} />
-                <Field label="Direcci\u00f3n" value={ficha.solicitante_direccion} />
+                <Field label="Dirección" value={ficha.solicitante_direccion} />
                 <Field label="Municipio" value={ficha.solicitante_municipio} />
                 <Field label="Provincia" value={ficha.solicitante_provincia} />
               </div>
             </div>
             <div className="ficha-section card">
-              <h3><Tag size={16} /> Identificaci\u00f3n</h3>
+              <h3><Tag size={16} /> Identificación</h3>
               <div className="ficha-fields">
                 <Field label="Clase" value={ficha.clase_general} editing={editing} field="clase_general" editData={editData} onChange={handleChange} />
                 <Field label="Estado actual" value={ficha.estado_actual} editing={editing} field="estado_actual" editData={editData} onChange={handleChange} />
@@ -174,12 +174,12 @@ export default function FichaDetalle() {
         {activeTab === 'ubicacion' && (
           <div className="ficha-grid">
             <div className="ficha-section card">
-              <h3><MapPin size={16} /> Localizaci\u00f3n</h3>
+              <h3><MapPin size={16} /> Localización</h3>
               <div className="ficha-fields">
                 <Field label="Municipio" value={ficha.municipio} editing={editing} field="municipio" editData={editData} onChange={handleChange} />
                 <Field label="Provincia" value={ficha.provincia} editing={editing} field="provincia" editData={editData} onChange={handleChange} />
                 <Field label="Paraje" value={ficha.paraje} editing={editing} field="paraje" editData={editData} onChange={handleChange} />
-                <Field label="Direcci\u00f3n" value={ficha.direccion} />
+                <Field label="Dirección" value={ficha.direccion} />
                 <Field label="Latitud" value={ficha.latitud} editing={editing} field="latitud" editData={editData} onChange={handleChange} />
                 <Field label="Longitud" value={ficha.longitud} editing={editing} field="longitud" editData={editData} onChange={handleChange} />
               </div>
@@ -188,18 +188,18 @@ export default function FichaDetalle() {
               <h3>Urbanismo</h3>
               <div className="ficha-fields">
                 <Field label="Planeamiento" value={ficha.planeamiento_vigente} />
-                <Field label="Clasificaci\u00f3n suelo" value={ficha.clasificacion_suelo} />
-                <Field label="Calificaci\u00f3n suelo" value={ficha.calificacion_suelo} />
+                <Field label="Clasificación suelo" value={ficha.clasificacion_suelo} />
+                <Field label="Calificación suelo" value={ficha.calificacion_suelo} />
                 <Field label="Uso predominante" value={ficha.uso_predominante} />
                 <Field label="Servidumbres" value={ficha.servidumbres} />
                 <Field label="Protecciones" value={ficha.protecciones} />
               </div>
             </div>
             <div className="ficha-section card">
-              <h3>Morfolog\u00eda</h3>
+              <h3>Morfología</h3>
               <div className="ficha-fields">
                 <Field label="Clima" value={ficha.clima} />
-                <Field label="Orograf\u00eda" value={ficha.orografia} />
+                <Field label="Orografía" value={ficha.orografia} />
                 <Field label="Pendiente" value={ficha.pendiente_media_porcentaje ? `${ficha.pendiente_media_porcentaje}%` : null} />
                 <Field label="Textura" value={ficha.textura_suelo} />
                 <Field label="Riego" value={ficha.sistema_riego} />
@@ -214,16 +214,16 @@ export default function FichaDetalle() {
             <div className="ficha-section card ficha-section-wide">
               <h3>Datos Catastrales</h3>
               {ficha.datos_catastrales?.length > 0 ? (
-                <table className="data-table"><thead><tr><th>Ref. Catastral</th><th>Pol\u00edgono</th><th>Parcela</th><th>Superficie</th><th>Uso</th></tr></thead>
+                <table className="data-table"><thead><tr><th>Ref. Catastral</th><th>Polígono</th><th>Parcela</th><th>Superficie</th><th>Uso</th></tr></thead>
                   <tbody>{ficha.datos_catastrales.map((dc, i) => (
-                    <tr key={i}><td style={{fontWeight:600}}>{dc.referencia_catastral}</td><td>{dc.poligono}</td><td>{dc.parcela}</td><td>{dc.superficie_catastral_m2} m\u00b2</td><td>{dc.uso_catastral}</td></tr>
+                    <tr key={i}><td style={{fontWeight:600}}>{dc.referencia_catastral}</td><td>{dc.poligono}</td><td>{dc.parcela}</td><td>{dc.superficie_catastral_m2} m²</td><td>{dc.uso_catastral}</td></tr>
                   ))}</tbody></table>
               ) : <p className="text-muted">Sin datos catastrales registrados</p>}
             </div>
             <div className="ficha-section card ficha-section-wide">
               <h3>Datos Registrales</h3>
               {ficha.datos_registrales?.length > 0 ? (
-                <table className="data-table"><thead><tr><th>N\u00ba Finca</th><th>Descripci\u00f3n</th><th>Superficie</th><th>Titularidad</th><th>Cargas</th></tr></thead>
+                <table className="data-table"><thead><tr><th>Nº Finca</th><th>Descripción</th><th>Superficie</th><th>Titularidad</th><th>Cargas</th></tr></thead>
                   <tbody>{ficha.datos_registrales.map((dr, i) => (
                     <tr key={i}><td>{dr.numero_finca}</td><td>{dr.descripcion_registral}</td><td>{dr.superficie_registral}</td><td>{dr.titularidad}</td><td>{dr.cargas}</td></tr>
                   ))}</tbody></table>
@@ -236,9 +236,9 @@ export default function FichaDetalle() {
           <div className="ficha-section card ficha-section-wide">
             <h3>Cultivos</h3>
             {ficha.cultivos?.length > 0 ? (
-              <table className="data-table"><thead><tr><th>Sector</th><th>Tipo Cultivo</th><th>Superficie (ha)</th><th>A\u00f1o Plantaci\u00f3n</th><th>Estado</th></tr></thead>
+              <table className="data-table"><thead><tr><th>Sector</th><th>Tipo Cultivo</th><th>Superficie (ha)</th><th>Año Plantación</th><th>Estado</th></tr></thead>
                 <tbody>{ficha.cultivos.map((c, i) => (
-                  <tr key={i}><td>{c.sector}</td><td style={{fontWeight:600}}>{c.tipo_cultivo}</td><td>{c.superficie_ha}</td><td>{c.ano_plantacion || '\u2014'}</td><td>{c.estado_produccion || '\u2014'}</td></tr>
+                  <tr key={i}><td>{c.sector}</td><td style={{fontWeight:600}}>{c.tipo_cultivo}</td><td>{c.superficie_ha}</td><td>{c.ano_plantacion || '—'}</td><td>{c.estado_produccion || '—'}</td></tr>
                 ))}</tbody></table>
             ) : <p className="text-muted">Sin cultivos registrados</p>}
           </div>
@@ -248,9 +248,9 @@ export default function FichaDetalle() {
           <div className="ficha-section card ficha-section-wide">
             <h3>Mejoras e Instalaciones</h3>
             {ficha.mejoras?.length > 0 ? (
-              <table className="data-table"><thead><tr><th>Tipo</th><th>Superficie (m\u00b2)</th><th>A\u00f1o Construcci\u00f3n</th><th>Vida \u00datil Restante</th></tr></thead>
+              <table className="data-table"><thead><tr><th>Tipo</th><th>Superficie (m²)</th><th>Año Construcción</th><th>Vida Útil Restante</th></tr></thead>
                 <tbody>{ficha.mejoras.map((m, i) => (
-                  <tr key={i}><td style={{fontWeight:600}}>{m.tipo_mejora}</td><td>{m.superficie_m2 || '\u2014'}</td><td>{m.ano_instalacion_construccion || '\u2014'}</td><td>{m.vida_util_restante_anos ? `${m.vida_util_restante_anos} a\u00f1os` : '\u2014'}</td></tr>
+                  <tr key={i}><td style={{fontWeight:600}}>{m.tipo_mejora}</td><td>{m.superficie_m2 || '—'}</td><td>{m.ano_instalacion_construccion || '—'}</td><td>{m.vida_util_restante_anos ? `${m.vida_util_restante_anos} años` : '—'}</td></tr>
                 ))}</tbody></table>
             ) : <p className="text-muted">Sin mejoras registradas</p>}
           </div>
@@ -259,27 +259,27 @@ export default function FichaDetalle() {
         {activeTab === 'valoracion' && (
           <div className="ficha-grid">
             <div className="ficha-section card">
-              <h3><Euro size={16} /> M\u00e9todo Comparaci\u00f3n</h3>
+              <h3><Euro size={16} /> Método Comparación</h3>
               <div className="ficha-fields">
                 <Field label="Superficie" value={ficha.valor_comparacion_superficie} />
-                <Field label="Valor unitario" value={ficha.valor_comparacion_unitario ? `${Number(ficha.valor_comparacion_unitario).toLocaleString('es-ES')} \u20ac` : null} />
+                <Field label="Valor unitario" value={ficha.valor_comparacion_unitario ? `${Number(ficha.valor_comparacion_unitario).toLocaleString('es-ES')} €` : null} />
                 <Field label="Valor total" value={ficha.valor_comparacion_total ? formatVal(ficha.valor_comparacion_total) : null} />
               </div>
               {ficha.valor_comparacion_detalles && <p className="ficha-observations" style={{marginTop:'0.75rem', fontSize:'0.85rem'}}>{ficha.valor_comparacion_detalles}</p>}
             </div>
             <div className="ficha-section card">
-              <h3>Actualizaci\u00f3n Rentas</h3>
+              <h3>Actualización Rentas</h3>
               <div className="ficha-fields">
                 <Field label="Renta anual" value={ficha.renta_anual} />
-                <Field label="Tasa actualizaci\u00f3n" value={ficha.tasa_actualizacion} />
+                <Field label="Tasa actualización" value={ficha.tasa_actualizacion} />
                 <Field label="Valor actualizado" value={ficha.valor_actualizacion_rentas ? formatVal(ficha.valor_actualizacion_rentas) : null} />
               </div>
             </div>
             <div className="ficha-section card">
-              <h3>M\u00e9todo Coste</h3>
+              <h3>Método Coste</h3>
               <div className="ficha-fields">
-                <Field label="Coste reposici\u00f3n" value={ficha.valor_coste_reposicion ? formatVal(ficha.valor_coste_reposicion) : null} />
-                <Field label="Depreciaci\u00f3n" value={ficha.valor_coste_depreciacion ? formatVal(ficha.valor_coste_depreciacion) : null} />
+                <Field label="Coste reposición" value={ficha.valor_coste_reposicion ? formatVal(ficha.valor_coste_reposicion) : null} />
+                <Field label="Depreciación" value={ficha.valor_coste_depreciacion ? formatVal(ficha.valor_coste_depreciacion) : null} />
                 <Field label="Valor final" value={ficha.valor_coste_final ? formatVal(ficha.valor_coste_final) : null} />
               </div>
             </div>
@@ -289,7 +289,7 @@ export default function FichaDetalle() {
                 <Field label="Valor de mercado" value={formatVal(ficha.valor_mercado)} />
                 <Field label="Valor hipotecario" value={formatVal(ficha.valor_hipotecario)} />
                 <Field label="Valor adoptado" value={formatVal(ficha.valor_mercado_adoptado)} highlight />
-                <Field label="M\u00e9todo principal" value={ficha.metodo_principal} />
+                <Field label="Método principal" value={ficha.metodo_principal} />
               </div>
             </div>
           </div>
@@ -300,7 +300,7 @@ export default function FichaDetalle() {
             <div className="ficha-section card ficha-section-wide">
               <h3>Reservas y Condicionantes</h3>
               {ficha.reservas?.length > 0 ? (
-                <table className="data-table"><thead><tr><th>C\u00f3digo</th><th>Descripci\u00f3n</th></tr></thead>
+                <table className="data-table"><thead><tr><th>Código</th><th>Descripción</th></tr></thead>
                   <tbody>{ficha.reservas.map((r, i) => (
                     <tr key={i}><td><span className="badge">{r.codigo || `R${i+1}`}</span></td><td>{r.descripcion}</td></tr>
                   ))}</tbody></table>
@@ -323,7 +323,7 @@ export default function FichaDetalle() {
 
 // Componente auxiliar para campos
 function Field({ label, value, editing, field, editData, onChange, highlight }) {
-  const displayValue = value || '\u2014';
+  const displayValue = value || '—';
   return (
     <div className={`ficha-field ${highlight ? 'highlight' : ''}`}>
       <label>{label}</label>

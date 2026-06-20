@@ -112,7 +112,7 @@ export default function Dashboard() {
   const hayFiltros = filtroClase || filtroMunicipio || filtroProvincia || filtroAnio || filtroValorMin || filtroValorMax || localidadBase;
 
   if (loading) {
-    return <div className="loading-state"><div className="spinner"></div><p>Cargando m\u00e9tricas...</p></div>;
+    return <div className="loading-state"><div className="spinner"></div><p>Cargando métricas...</p></div>;
   }
 
   const totalInformes = datosFiltrados.length;
@@ -120,7 +120,7 @@ export default function Dashboard() {
   const avgValor = totalInformes ? (totalValor / totalInformes) : 0;
   const conCoordenadas = datosFiltrados.filter(d => d.latitud && d.longitud).length;
 
-  // Datos para gr\u00e1ficos
+  // Datos para gráficos
   const clasesCount = datosFiltrados.reduce((acc, curr) => { const k = curr.clase_general || 'Sin clase'; acc[k] = (acc[k] || 0) + 1; return acc; }, {});
   const dataClases = Object.entries(clasesCount).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
 
@@ -142,9 +142,9 @@ export default function Dashboard() {
     <div className="page-container dashboard-page">
       <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h2>Dashboard Anal\u00edtico</h2>
+          <h2>Dashboard Analítico</h2>
           <p className="text-muted">
-            Resumen interactivo de informes de tasaci\u00f3n
+            Resumen interactivo de informes de tasación
             {hayFiltros && <span className="filter-badge">{datosFiltrados.length} de {data.length} informes</span>}
           </p>
         </div>
@@ -186,19 +186,19 @@ export default function Dashboard() {
             </select>
           </div>
           <div className="form-group">
-            <label>A\u00f1o</label>
+            <label>Año</label>
             <select value={filtroAnio} onChange={e => setFiltroAnio(e.target.value)}>
               <option value="">Todos</option>
               {opcionesAnios.map(a => <option key={a} value={a}>{a}</option>)}
             </select>
           </div>
           <div className="form-group">
-            <label>Valor m\u00edn. (\u20ac)</label>
+            <label>Valor mín. (€)</label>
             <input type="number" min="0" value={filtroValorMin} onChange={e => setFiltroValorMin(e.target.value)} placeholder="0" />
           </div>
           <div className="form-group">
-            <label>Valor m\u00e1x. (\u20ac)</label>
-            <input type="number" min="0" value={filtroValorMax} onChange={e => setFiltroValorMax(e.target.value)} placeholder="Sin l\u00edmite" />
+            <label>Valor máx. (€)</label>
+            <input type="number" min="0" value={filtroValorMax} onChange={e => setFiltroValorMax(e.target.value)} placeholder="Sin límite" />
           </div>
         </div>
         <div className="distance-filter-section">
@@ -212,8 +212,8 @@ export default function Dashboard() {
               </select>
             </div>
             <div className="form-group">
-              <label>Radio m\u00e1x. (km)</label>
-              <input type="number" min="0" value={radioKm} onChange={e => setRadioKm(e.target.value)} placeholder="Sin l\u00edmite" disabled={!localidadBase} />
+              <label>Radio máx. (km)</label>
+              <input type="number" min="0" value={radioKm} onChange={e => setRadioKm(e.target.value)} placeholder="Sin límite" disabled={!localidadBase} />
             </div>
           </div>
         </div>
@@ -262,16 +262,16 @@ export default function Dashboard() {
           </div>
           <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
             <table className="data-table">
-              <thead><tr><th>Dist.</th><th>N\u00ba Informe</th><th>Municipio</th><th>Solicitante</th><th style={{ textAlign: 'right' }}>Valor</th></tr></thead>
+              <thead><tr><th>Dist.</th><th>Nº Informe</th><th>Municipio</th><th>Solicitante</th><th style={{ textAlign: 'right' }}>Valor</th></tr></thead>
               <tbody>
                 {datosFiltrados.slice(0, 50).map(item => (
                   <tr key={item.id} onClick={() => navigate(`/ficha/${item.id}`)} style={{ cursor: 'pointer' }}>
-                    <td><span className="badge badge-accent">{item._distancia !== undefined ? `${item._distancia.toFixed(1)} km` : '\u2014'}</span></td>
+                    <td><span className="badge badge-accent">{item._distancia !== undefined ? `${item._distancia.toFixed(1)} km` : '—'}</span></td>
                     <td style={{ fontWeight: 600, fontSize: '0.82rem' }}>{item.numero_informe || `INF-${item.id}`}</td>
                     <td style={{ fontSize: '0.82rem' }}>{item.municipio}</td>
-                    <td style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{item.solicitante_nombre || '\u2014'}</td>
+                    <td style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{item.solicitante_nombre || '—'}</td>
                     <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--green)', fontSize: '0.82rem' }}>
-                      {Number(item.valor_mercado_adoptado || 0).toLocaleString('es-ES')} \u20ac
+                      {Number(item.valor_mercado_adoptado || 0).toLocaleString('es-ES')} €
                     </td>
                   </tr>
                 ))}
@@ -281,10 +281,10 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Gr\u00e1ficos */}
+      {/* Gráficos */}
       <div className="charts-grid">
         <div className="chart-card chart-card-wide">
-          <h3>Evoluci\u00f3n Temporal</h3>
+          <h3>Evolución Temporal</h3>
           <div className="chart-wrapper">
             <ResponsiveContainer width="100%" height={280}>
               <LineChart data={dataEvolucion} margin={{ top: 10, right: 30, left: 0, bottom: 5 }}>
@@ -295,7 +295,7 @@ export default function Dashboard() {
                 <Tooltip contentStyle={{ backgroundColor: 'var(--bg-panel)', borderColor: 'var(--border-color)', borderRadius: '8px' }} />
                 <Legend />
                 <Line yAxisId="left" type="monotone" dataKey="cantidad" name="Informes" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
-                <Line yAxisId="right" type="monotone" dataKey="valorTotal" name="Valor (\u20ac)" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
+                <Line yAxisId="right" type="monotone" dataKey="valorTotal" name="Valor (€)" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -317,7 +317,7 @@ export default function Dashboard() {
         </div>
 
         <div className="chart-card">
-          <h3>Distribuci\u00f3n por Clase</h3>
+          <h3>Distribución por Clase</h3>
           <div className="chart-wrapper">
             <ResponsiveContainer width="100%" height={280}>
               <PieChart>

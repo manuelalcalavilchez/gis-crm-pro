@@ -35,7 +35,7 @@ export default function Usuarios() {
 
   const handleCreateUser = async (e) => {
     e.preventDefault(); setMensaje(''); setError(''); setCreating(true);
-    if (!formData.email || !formData.password) { setError('Email y contrase\u00f1a son obligatorios'); setCreating(false); return; }
+    if (!formData.email || !formData.password) { setError('Email y contraseña son obligatorios'); setCreating(false); return; }
     try {
       await createUsuario(formData);
       setMensaje('Usuario creado correctamente');
@@ -53,7 +53,7 @@ export default function Usuarios() {
 
   const handleDeleteUser = async (user) => {
     if (user.email === currentUser?.email) { setError('No puedes eliminar tu propio usuario'); clearMessages(); return; }
-    if (!confirm(`\u00bfEliminar a ${user.email}?`)) return;
+    if (!confirm(`¿Eliminar a ${user.email}?`)) return;
     try { await deleteUsuario(user.email); setMensaje('Usuario eliminado'); loadUsuarios(); clearMessages(); }
     catch (err) { setError(err.message); clearMessages(); }
   };
@@ -65,8 +65,8 @@ export default function Usuarios() {
     <div className="page-container">
       <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h2>Gesti\u00f3n de Usuarios</h2>
-          <p className="text-muted">{usuarios.length} usuarios registrados. Solo administradores pueden gestionar esta secci\u00f3n.</p>
+          <h2>Gestión de Usuarios</h2>
+          <p className="text-muted">{usuarios.length} usuarios registrados. Solo administradores pueden gestionar esta sección.</p>
         </div>
         <button className="btn-primary" onClick={() => setIsFormOpen(!isFormOpen)}>
           <UserPlus size={18} /><span>{isFormOpen ? 'Cancelar' : 'Nuevo Usuario'}</span>
@@ -81,7 +81,7 @@ export default function Usuarios() {
           <h3 style={{ marginBottom: '1.5rem' }}>Crear Nuevo Usuario</h3>
           <div className="form-grid">
             <div className="form-group"><label>Email *</label><input type="email" required value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="usuario@ejemplo.com" /></div>
-            <div className="form-group"><label>Contrase\u00f1a *</label><input type="password" required minLength={4} value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} placeholder="M\u00ednimo 4 caracteres" /></div>
+            <div className="form-group"><label>Contraseña *</label><input type="password" required minLength={4} value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} placeholder="Mínimo 4 caracteres" /></div>
             <div className="form-group"><label>Rol</label><select value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })}>{ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}</select></div>
           </div>
           <div className="form-actions" style={{ marginTop: '1.5rem', justifyContent: 'flex-end' }}>
@@ -111,7 +111,7 @@ export default function Usuarios() {
                       <div className="user-cell">
                         <div className="user-avatar" style={{ background: `${roleInfo.color}20`, color: roleInfo.color }}>{user.email.charAt(0).toUpperCase()}</div>
                         <span className="user-name">{user.email}</span>
-                        {isCurrentUser && <span className="badge badge-accent" style={{ marginLeft: '0.5rem' }}>T\u00fa</span>}
+                        {isCurrentUser && <span className="badge badge-accent" style={{ marginLeft: '0.5rem' }}>Tú</span>}
                       </div>
                     </td>
                     <td>

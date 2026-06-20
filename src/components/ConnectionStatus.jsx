@@ -20,7 +20,7 @@ export default function ConnectionStatus({ compact = false }) {
 
   if (compact) {
     return (
-      <div className={`connection-dot ${status}`} title={status === 'online' ? `Conectado - ${recordCount || 0} informes` : 'Sin conexi\u00f3n'}>
+      <div className={`connection-dot ${status}`} title={status === 'online' ? `Conectado - ${recordCount || 0} informes` : 'Sin conexión'}>
         <span className="connection-dot-indicator"></span>
       </div>
     );
@@ -36,7 +36,7 @@ export default function ConnectionStatus({ compact = false }) {
       <div className="connection-status-info">
         <span className="connection-status-label">
           {status === 'online' && 'BD Conectada'}
-          {status === 'offline' && 'Sin conexi\u00f3n'}
+          {status === 'offline' && 'Sin conexión'}
           {status === 'checking' && 'Verificando...'}
         </span>
         {status === 'online' && recordCount !== null && (

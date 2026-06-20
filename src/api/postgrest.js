@@ -196,8 +196,8 @@ export async function importarInformeCompleto(jsonData) {
     provincia: jsonData.identificacion_y_localizacion?.provincia || null,
     paraje: jsonData.identificacion_y_localizacion?.paraje || null,
     direccion: jsonData.identificacion_y_localizacion?.direccion || null,
-    estado_actual: jsonData.identificacion_y_localizacion?.estado_actual || 'En explotaci\u00f3n agr\u00edcola',
-    clase_general: jsonData.identificacion_y_localizacion?.clase_general_inmueble || 'Finca R\u00fastica',
+    estado_actual: jsonData.identificacion_y_localizacion?.estado_actual || 'En explotación agrícola',
+    clase_general: jsonData.identificacion_y_localizacion?.clase_general_inmueble || 'Finca Rústica',
     ocupacion: jsonData.identificacion_y_localizacion?.ocupacion || null,
     latitud: parseFloat(jsonData.identificacion_y_localizacion?.coordenadas_gps?.latitud) || null,
     longitud: parseFloat(jsonData.identificacion_y_localizacion?.coordenadas_gps?.longitud) || null,
@@ -226,8 +226,8 @@ export async function importarInformeCompleto(jsonData) {
     contaminacion: jsonData.descripcion_y_superficies?.caracteristicas_morfologicas?.contaminacion || null,
     descripcion_agrologica: jsonData.descripcion_y_superficies?.descripcion_agrologica || null,
     descripcion_finca: jsonData.descripcion_y_superficies?.descripcion_finca || null,
-    energia_electrica: jsonData.descripcion_y_superficies?.infraestructuras_interiores?.energia_electrica === 'S\u00ed',
-    agua_regadio: jsonData.descripcion_y_superficies?.infraestructuras_interiores?.agua_regadio === 'S\u00ed',
+    energia_electrica: jsonData.descripcion_y_superficies?.infraestructuras_interiores?.energia_electrica === 'Sí',
+    agua_regadio: jsonData.descripcion_y_superficies?.infraestructuras_interiores?.agua_regadio === 'Sí',
     procedencia_agua: jsonData.descripcion_y_superficies?.infraestructuras_interiores?.procedencia_agua || null,
     sistema_riego: jsonData.descripcion_y_superficies?.infraestructuras_interiores?.sistema_riego || null,
     red_viaria: jsonData.descripcion_y_superficies?.infraestructuras_interiores?.red_viaria || null,
@@ -409,7 +409,7 @@ export async function importarLoteMasivo(jsonArray) {
 
 export async function loginUser(email, password) {
   const res = await fetch(`${BASE_URL}/usuarios?email=eq.${encodeURIComponent(email)}&password=eq.${encodeURIComponent(password)}`);
-  if (!res.ok) throw new Error('Error de conexi\u00f3n');
+  if (!res.ok) throw new Error('Error de conexión');
   return res.json();
 }
 
